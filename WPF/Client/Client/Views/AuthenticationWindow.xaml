@@ -1,0 +1,23 @@
+﻿<Window x:Class="Client.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Client"
+        mc:Ignorable="d"
+        Title="Синхронизатор файлов" Height="450" Width="400"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        >
+    <Grid>
+        
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0 0 0 60">
+            <Label FontWeight="Bold" FontSize="25" Content="Логин" HorizontalAlignment="Center" Margin="0 20 0 0" FontFamily="Arial"></Label>
+            <TextBox Text="{Binding CurrentLogin}" MaxLength="16" Width="200" FontSize="20" FontFamily="Arial"></TextBox>
+            <Label Content="Пароль" FontWeight="Bold" FontSize="25" HorizontalAlignment="Center" FontFamily="Arial"></Label>
+            <PasswordBox MaxLength="16" FontSize="20" Width="200" Name="MyPasswordBox"></PasswordBox>
+            <Button Command="{Binding RegistrationBtn}" Content="Регистрация" FontSize="20" Width="140" Margin="15" FontFamily="Arial" CommandParameter="{Binding ElementName=MyPasswordBox}"></Button>
+            <Button Command="{Binding SignInBtn}" Content="Вход" FontSize="20" Width="140" FontFamily="Arial" CommandParameter="{Binding ElementName=MyPasswordBox}"></Button>
+        </StackPanel>
+    </Grid>
+</Window>
