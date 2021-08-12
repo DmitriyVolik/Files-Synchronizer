@@ -30,54 +30,62 @@ namespace Client
 
                     using (var client = TcpHelper.GetClient())
                     {
-                        var stream = client.GetStream();
-                        PacketSender.SendJsonString(stream, "GET:FILES:LIST");
-
-                        while (true)
+                        
+                        using (var stream = client.GetStream())
                         {
-                            data = PacketRecipient.GetJsonData(stream);
+                            Console.WriteLine(client.SendBufferSize);
+                            PacketSender.SendJsonString(stream, "GET:FILES:LIST");
 
-                            if (data != null) break;
-
-                            Thread.Sleep(100);
+                            data = PacketRecipient.GetJsonData(stream, client.SendBufferSize);
+                            
                         }
                     }
-
-                    serverFiles = JsonWorker.JsonToFiles(data);
                     
-                    if (serverFiles.Count==0)
+                    Console.WriteLine(data);
+                    Console.WriteLine("-----------------");
+                    
+                    serverFiles = JsonWorker.JsonToFiles(data);
+
+                    if (serverFiles.Count == 0)
                     {
                         DirectoryInfo folder = new DirectoryInfo(mainDir);
 
                         foreach (FileInfo file in folder.GetFiles())
                         {
-                            file.Delete(); 
+                            file.Delete();
                         }
 
                         foreach (DirectoryInfo dir in folder.GetDirectories())
                         {
-                            dir.Delete(true); 
+                            dir.Delete(true);
                         }
                     }
-                
-                
+
+
                     var files = new List<FileM>();
 
                     ScanFiles.ProcessDirectory(mainDir, files);
 
+                    long totalSize = 0;
+                    
                     foreach (var item in serverFiles)
                     {
+                        totalSize += item.Size;
 
                         if (item.Size == 0)
                         {
+                            /*if (!Directory.Exists(item.Path))
+                            {
+                                Directory.CreateDirectory(mainDir+Path.GetDirectoryName(item.Path));
+                            }*/
                             continue;
                         }
 
                         FileM selectedItem = files.FirstOrDefault(x => x.Path == item.Path);
-                    
+
                         if (selectedItem == null)
                         {
-                            PacketFile.GetFile(item.Path);
+                            PacketFile.GetFile(item.Path, serverFiles);
                             continue;
                         }
                         else
@@ -88,7 +96,7 @@ namespace Client
                         if (item.Size != selectedItem.Size)
                         {
                             File.Delete(mainDir + selectedItem.Path);
-                            PacketFile.GetFile(item.Path);
+                            PacketFile.GetFile(item.Path,serverFiles);
                         }
                         else
                         {
@@ -106,27 +114,55 @@ namespace Client
                             if (hash != item.Hash)
                             {
                                 File.Delete(mainDir + selectedItem.Path);
-                                PacketFile.GetFile(item.Path);
+                                PacketFile.GetFile(item.Path,serverFiles );
                             }
-                        }
-                    
-                        foreach (var i in files)
-                        {
-                            if (!serverFiles.Exists(x=> x.Path==i.Path))
-                            {
-                                File.Delete(mainDir+i.Path);
-                            
-                            }
-                        
                         }
 
-                        Dirs.ClearEmptyDirs(mainDir);
+                        
                     }
+                    foreach (var i in files)
+                    {
+                        if (!serverFiles.Exists(x => x.Path == i.Path))
+                        {
+                            File.Delete(mainDir + i.Path);
+                            continue;
+                        }
+                        
+                    }
+
+                    Dirs.ClearEmptyDirs(mainDir);
+
+                    Console.WriteLine("---------------------------");
+                    
+                    long totalSizeClient=0;
+
+                    List <FileM> clientFiles = new List<FileM>();
+                    
+                    /*while (totalSize != totalSizeClient)
+                    {
+                        
+                        Thread.Sleep(500);
+                        
+                        clientFiles.Clear();
+                        
+                        ScanFiles.ProcessDirectory(mainDir, clientFiles);
+                        totalSizeClient = 0;
+                        foreach (var item in clientFiles)
+                        {
+                            totalSizeClient += item.Size;
+                        }
+                        
+                        Console.WriteLine(totalSize);
+                        Console.WriteLine(totalSizeClient);
+                        Console.WriteLine("===================");
+                    }*/
                     Thread.Sleep(5000);
+                    
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Server lost");
+                    Console.WriteLine(e.Message);
+                    throw;
                 }
             }
         }

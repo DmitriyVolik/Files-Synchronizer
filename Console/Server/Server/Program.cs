@@ -29,6 +29,27 @@ public class StateObject
 
     // Client socket.
     public Socket workSocket = null;
+
+    private int targetBytesCount = 0;
+    private int sentBytesCount = 0;
+
+    public void SetGoal(int targetBytesCount)
+    {
+        this.targetBytesCount = targetBytesCount;
+        this.sentBytesCount = 0;
+    }
+
+    public int SetNextResultNGetRest(int nextSentBytesCount)
+    {
+        this.sentBytesCount += nextSentBytesCount;
+        return this.targetBytesCount - this.sentBytesCount;
+    }
+
+    public void ResetGoal()
+    {
+        this.targetBytesCount = 0;
+        this.sentBytesCount = 0;
+    }
 }  
   
 public class AsynchronousSocketListener
@@ -74,6 +95,7 @@ public class AsynchronousSocketListener
         // The DNS name of the computer  
         // running the listener is "host.contoso.com".  
         IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());  
+        // IPAddress ipAddress = IPAddress.Parse("192.168.0.109");
         IPAddress ipAddress = IPAddress.Parse("192.168.0.109");
         IPEndPoint localEndPoint = new IPEndPoint(ipAddress, 1024);
 
@@ -126,9 +148,9 @@ public class AsynchronousSocketListener
   
         // Create the state object.  
         StateObject state = new StateObject();  
-        state.workSocket = handler;  
+        state.workSocket = handler;
         handler.BeginReceive( state.buffer, 0, StateObject.BufferSize, 0,  
-            new AsyncCallback(ReadCallback), state);  
+            ReadCallback, state);  
     }
 
     public static void ReadCallback(IAsyncResult ar)
@@ -154,6 +176,13 @@ public class AsynchronousSocketListener
             // ignored
             return;
         }
+        
+        // !!! проверить: в накопительном стринг билдере - столько байтов, сколько
+        // было сообщено сервером в ответ на разведывательный запрос;
+        // - если меньше - запустить очередное получение:
+        // 1. если накопитель пообще пуст - со смещением 0;
+        // 2. если в накопителе уже Х байт, то со смещением Х;
+        // - если равно - выйти из цикла запуска получений
 
         if (bytesRead > 0) {  
             // There  might be more data, so store the data received so far.  
@@ -169,6 +198,9 @@ public class AsynchronousSocketListener
             if (content=="GET:FILES:LIST")
             {
                 Console.WriteLine(JsonWorker<List<FileM>>.ObjToJson(Files));
+                Console.WriteLine("-----------------------------------------------------");
+                Console.WriteLine(JsonWorker<List<FileM>>.ObjToJson(Files).Length);
+                Console.WriteLine("-----------------------------------------------------");
                 Send(handler, JsonWorker<List<FileM>>.ObjToJson(Files));
                 
             } 
@@ -181,7 +213,37 @@ public class AsynchronousSocketListener
                 {
                     try
                     {
-                        handler.BeginSendFile(MainDirectory+path,new AsyncCallback(SendFileCallback), handler);  
+                        // !!! Отправлять так только если количество отправляемых байт - меньше
+                        // размера буфера приемника, иначе - циклически вызывать асинхронную отправку,
+                        // пока результаты ее прекращения не дадут в сумме отправляемый объем байт
+                        String filePath = MainDirectory + path;
+                        StateObject fileSendState = new StateObject();
+                        byte[] fileByteArray = File.ReadAllBytes(filePath);
+                        state.SetGoal(fileByteArray.Length);
+                        handler.BeginSend(
+                            fileByteArray,
+                            0,
+                            fileByteArray.Length,
+                            SocketFlags.None,
+                            SendFileCallback,
+                            new object[]
+                            {
+                                handler,
+                                fileByteArray,
+                                fileSendState,
+                                MainDirectory + path
+                            }
+                        );
+                        /* handler.BeginSendFile(
+                            MainDirectory + path,
+                            SendFileCallback,
+                            new object[]
+                            {
+                                handler,
+                                state,
+                                MainDirectory + path
+                            }
+                        );  */
                         Console.WriteLine("file send!!");
                     }
                     catch (System.IO.IOException)
@@ -240,12 +302,22 @@ public class AsynchronousSocketListener
 
     private static void Send(Socket handler, String data)
     {
+        StateObject fileSendState = new StateObject();
+        
+        
+
         // Convert the string data to byte data using ASCII encoding.  
         byte[] byteData = Encoding.Unicode.GetBytes(data);  
   
+        fileSendState.SetGoal(byteData.Length);
         // Begin sending the data to the remote device.  
         handler.BeginSend(byteData, 0, byteData.Length, 0,  
-            new AsyncCallback(SendCallback), handler);  
+            new AsyncCallback(SendCallback), new object[]
+            {
+                handler,
+                byteData,
+                fileSendState
+            });  
     }
     
     // .BeginSend(bytes, 0, bytes.Length, SocketFlags.None, endSendCallback, clientSocket);
@@ -255,10 +327,26 @@ public class AsynchronousSocketListener
         try
         {
             // Retrieve the socket from the state object.  
-            Socket handler = (Socket) ar.AsyncState;  
-  
+            Socket handler = (Socket) ((object[])ar.AsyncState)[0];
+            byte[] jsonByteArray = (byte[])((object[])ar.AsyncState)[1];
+            StateObject jsonSendState = (StateObject)((object[])ar.AsyncState)[2];
+            
             // Complete sending the data to the remote device.  
             int bytesSent = handler.EndSend(ar);
+            
+            int total = jsonSendState.SetNextResultNGetRest(bytesSent);
+            
+            if (total > 0)
+            {
+                // !!! Заменить BeginSendFile на BeginSend, чтобы можно было передавать байты
+                // файла по частям
+                // handler.BeginSendFile(MainDirectory+path,new AsyncCallback(SendFileCallback), handler);
+                handler.BeginSend(jsonByteArray, total, jsonByteArray.Length - total,
+                    SocketFlags.None, new AsyncCallback(SendCallback), handler);
+                return;
+            }
+            
+            
             Console.WriteLine("Sent {0} bytes to client.", bytesSent);  
   
             handler.Shutdown(SocketShutdown.Both);  
@@ -276,10 +364,26 @@ public class AsynchronousSocketListener
         try
         {
             // Retrieve the socket from the state object.  
-            Socket handler = (Socket) ar.AsyncState;  
-  
+            Socket handler = (Socket) ((object[])ar.AsyncState)[0];
+            byte[] fileByteArray = (byte[])((object[])ar.AsyncState)[1];
+            StateObject fileSendState = (StateObject)((object[])ar.AsyncState)[2];
+            String filePath = (String)((object[])ar.AsyncState)[3];
             // Complete sending the data to the remote device.  
-            handler.EndSendFile(ar);
+            // handler.EndSendFile(ar);
+            int nextSentBytesCount = handler.EndSend(ar);
+
+            int total = fileSendState.SetNextResultNGetRest(nextSentBytesCount);
+            
+            if (total > 0)
+            {
+                // !!! Заменить BeginSendFile на BeginSend, чтобы можно было передавать байты
+                // файла по частям
+                // handler.BeginSendFile(MainDirectory+path,new AsyncCallback(SendFileCallback), handler);
+                handler.BeginSend(fileByteArray, total, fileByteArray.Length - total,
+                    SocketFlags.None, new AsyncCallback(SendFileCallback), handler);
+                return;
+            }
+            
             Console.WriteLine("Sent File done");  
   
             handler.Shutdown(SocketShutdown.Both);  

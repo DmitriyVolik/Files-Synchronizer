@@ -7,9 +7,9 @@ namespace Client
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class AuthenticationWindow : Window
     {
-        public MainWindow()
+        public AuthenticationWindow()
         {
             InitializeComponent();
             DataContext = new AuthenticationWindowViewModel();

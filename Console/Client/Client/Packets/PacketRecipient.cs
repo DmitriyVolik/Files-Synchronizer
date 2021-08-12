@@ -9,15 +9,16 @@ namespace Chat.Packets
 {
     class PacketRecipient
     {
-        public static string GetJsonData(NetworkStream stream)
+        public static string GetJsonData(NetworkStream stream, long bufferSize)
         {
-            byte[] data = new byte[1024];
+            byte[] data = new byte[bufferSize];
             StringBuilder builder = new StringBuilder();
             int bytes = 0;
             do
             {
            
                 bytes = stream.Read(data, 0, data.Length);
+                
                 builder.Append(Encoding.Unicode.GetString(data, 0, bytes));
             } while (stream.DataAvailable);
             return builder.ToString();

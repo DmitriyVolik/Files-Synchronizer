@@ -7,6 +7,7 @@ namespace Client.Helpers
         public static TcpClient GetClient()
         {
             return new TcpClient("46.160.119.181", 5432);
+            //return new TcpClient("127.0.0.1", 1024);
         }
     }
 }
