@@ -59,7 +59,7 @@ namespace Chat.Packets
                             Console.WriteLine(count);
                             Console.WriteLine("-------Client----------");
 
-                        } while (candidateFile.Size!=count);
+                        } while (candidateFile.Size< count);
                     }
                 }
             }

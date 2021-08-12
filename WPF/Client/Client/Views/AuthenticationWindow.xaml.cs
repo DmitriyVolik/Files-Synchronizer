@@ -12,7 +12,7 @@ namespace Client
         public AuthenticationWindow()
         {
             InitializeComponent();
-            DataContext = new AuthenticationWindowViewModel();
+            DataContext = new AuthenticationWindowViewModel(this);
         }
     }
 }

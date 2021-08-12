@@ -30,16 +30,21 @@ public class StateObject
     // Client socket.
     public Socket workSocket = null;
 
-    private int targetBytesCount = 0;
-    private int sentBytesCount = 0;
+    private long targetBytesCount = 0;
+    private long sentBytesCount = 0;
+    
+    public long GetRest()
+    {
+        return this.targetBytesCount - this.sentBytesCount;
+    }
 
-    public void SetGoal(int targetBytesCount)
+    public void SetGoal(long targetBytesCount)
     {
         this.targetBytesCount = targetBytesCount;
         this.sentBytesCount = 0;
     }
 
-    public int SetNextResultNGetRest(int nextSentBytesCount)
+    public long SetNextResultNGetRest(long nextSentBytesCount)
     {
         this.sentBytesCount += nextSentBytesCount;
         return this.targetBytesCount - this.sentBytesCount;
@@ -174,6 +179,7 @@ public class AsynchronousSocketListener
         catch (Exception e)
         {
             // ignored
+            /*throw;*/
             return;
         }
         
@@ -216,24 +222,83 @@ public class AsynchronousSocketListener
                         // !!! Отправлять так только если количество отправляемых байт - меньше
                         // размера буфера приемника, иначе - циклически вызывать асинхронную отправку,
                         // пока результаты ее прекращения не дадут в сумме отправляемый объем байт
-                        String filePath = MainDirectory + path;
                         StateObject fileSendState = new StateObject();
-                        byte[] fileByteArray = File.ReadAllBytes(filePath);
-                        state.SetGoal(fileByteArray.Length);
-                        handler.BeginSend(
-                            fileByteArray,
-                            0,
-                            fileByteArray.Length,
-                            SocketFlags.None,
-                            SendFileCallback,
-                            new object[]
-                            {
-                                handler,
+                        
+                        long fileSize=Files.FirstOrDefault(x => x.Path == path).Size;
+                        const int maxSize=1000000000;
+                        if (fileSize<=maxSize)
+                        {
+                            String filePath = MainDirectory + path;
+                            byte[] fileByteArray = File.ReadAllBytes(filePath);
+                            state.SetGoal(fileByteArray.Length);
+                            handler.BeginSend(
                                 fileByteArray,
-                                fileSendState,
-                                MainDirectory + path
-                            }
-                        );
+                                0,
+                                fileByteArray.Length,
+                                SocketFlags.None,
+                                SendFileCallback,
+                                new object[]
+                                {
+                                    handler,
+                                    fileByteArray,
+                                    fileSendState,
+                                    fileSize,
+                                    maxSize
+                                    
+                                }
+                            );
+                            
+                        }
+                        else
+                        {
+                            StateObject fileReadState = new StateObject();
+                            fileReadState.SetGoal(fileSize);
+                            long total=0;
+                            byte[] buffer = new byte[maxSize];
+                            do
+                            {
+                                while (fileSendState.GetRest()>0)
+                                {
+                                    Thread.Sleep(100);
+                                }
+                                using (var fs = new FileStream(MainDirectory + path, FileMode.Open))
+                                {
+                                    long delta=fileSize-total;
+                                    long result;
+                                    fs.Position = total;
+                                    if (delta>maxSize)
+                                    {
+                                        result=fs.Read(buffer, 0, maxSize);
+                                    }
+                                    else
+                                    {
+                                        result=fs.Read(buffer, 0, (int)delta);
+                                    }
+                                    total=fileReadState.SetNextResultNGetRest(result);
+                                    
+                                    fileReadState.SetGoal(delta);
+                                    
+                                    handler.BeginSend(
+                                        buffer,
+                                        0,
+                                        buffer.Length,
+                                        SocketFlags.None,
+                                        SendFileCallback,
+                                        new object[]
+                                        {
+                                            handler,
+                                            buffer,
+                                            fileSendState,
+                                            fileSize,
+                                            maxSize
+                                        }
+                                    );
+                                }
+
+                            } while (total<fileSize);
+                            handler.Shutdown(SocketShutdown.Both);  
+                            handler.Close();  
+                        }
                         /* handler.BeginSendFile(
                             MainDirectory + path,
                             SendFileCallback,
@@ -246,9 +311,9 @@ public class AsynchronousSocketListener
                         );  */
                         Console.WriteLine("file send!!");
                     }
-                    catch (System.IO.IOException)
+                    catch (Exception e)
                     {
-                        
+                        throw;
                     }
                 }
                 else
@@ -283,6 +348,28 @@ public class AsynchronousSocketListener
 
 
             }
+            else if (content.Contains("SIGN:IN:"))
+            {
+                string data = content.Replace("SIGN:IN:", "");
+
+                ClientUser tempUser = JsonWorker<ClientUser>.JsonToObj(data);
+                
+                using (Context db = new Context())
+                {
+                    var candidate = db.Users.FirstOrDefault(x => x.Login == tempUser.Login);
+                    
+                    if (PasswordHash.ValidatePassword(tempUser.Password, candidate.Password))
+                    {
+                        Send(handler, "SIGN:IN:SUCCESS");
+                    }
+                    else
+                    {
+                        Send(handler, "SIGN:IN:INCORRECT");
+                    }
+                }
+
+            }
+            
             else {  
                 // Not all data received. Get more.  
                 handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,  
@@ -334,14 +421,14 @@ public class AsynchronousSocketListener
             // Complete sending the data to the remote device.  
             int bytesSent = handler.EndSend(ar);
             
-            int total = jsonSendState.SetNextResultNGetRest(bytesSent);
+            long total = jsonSendState.SetNextResultNGetRest(bytesSent);
             
             if (total > 0)
             {
                 // !!! Заменить BeginSendFile на BeginSend, чтобы можно было передавать байты
                 // файла по частям
                 // handler.BeginSendFile(MainDirectory+path,new AsyncCallback(SendFileCallback), handler);
-                handler.BeginSend(jsonByteArray, total, jsonByteArray.Length - total,
+                handler.BeginSend(jsonByteArray, (int)total, jsonByteArray.Length - (int)total,
                     SocketFlags.None, new AsyncCallback(SendCallback), handler);
                 return;
             }
@@ -355,6 +442,7 @@ public class AsynchronousSocketListener
         }
         catch (Exception e)
         {
+            throw;
             Console.WriteLine(e.ToString());  
         }  
     }
@@ -367,28 +455,34 @@ public class AsynchronousSocketListener
             Socket handler = (Socket) ((object[])ar.AsyncState)[0];
             byte[] fileByteArray = (byte[])((object[])ar.AsyncState)[1];
             StateObject fileSendState = (StateObject)((object[])ar.AsyncState)[2];
-            String filePath = (String)((object[])ar.AsyncState)[3];
+
+            long fileSize = (long)((object[]) ar.AsyncState)[3];
+            int maxSize=(int)((object[]) ar.AsyncState)[4];
+            
             // Complete sending the data to the remote device.  
             // handler.EndSendFile(ar);
             int nextSentBytesCount = handler.EndSend(ar);
 
-            int total = fileSendState.SetNextResultNGetRest(nextSentBytesCount);
+            long total = fileSendState.SetNextResultNGetRest(nextSentBytesCount);
             
             if (total > 0)
             {
                 // !!! Заменить BeginSendFile на BeginSend, чтобы можно было передавать байты
                 // файла по частям
                 // handler.BeginSendFile(MainDirectory+path,new AsyncCallback(SendFileCallback), handler);
-                handler.BeginSend(fileByteArray, total, fileByteArray.Length - total,
+                handler.BeginSend(fileByteArray, (int)total, fileByteArray.Length - (int)total,
                     SocketFlags.None, new AsyncCallback(SendFileCallback), handler);
                 return;
             }
             
-            Console.WriteLine("Sent File done");  
-  
-            handler.Shutdown(SocketShutdown.Both);  
-            handler.Close();  
-  
+            Console.WriteLine("Sent File done");
+            if (fileSize<maxSize)
+            {
+                handler.Shutdown(SocketShutdown.Both);  
+                handler.Close(); 
+
+            }
+            
         }
         catch (Exception e)
         {

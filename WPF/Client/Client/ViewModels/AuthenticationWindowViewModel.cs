@@ -17,10 +17,13 @@ namespace Client.ViewModels
         
         
         public string CurrentLogin { get; set; }
-        
-        public AuthenticationWindowViewModel()
+
+        public readonly Window _window;
+
+        public AuthenticationWindowViewModel(Window window)
         {
             CurrentLogin = "";
+            _window = window;
             
             try
             {
@@ -71,8 +74,10 @@ namespace Client.ViewModels
 
                             if (answer=="ADD:SUCCESS")
                             {
-                                
-                                //ПЕРЕХОДИМ К СЛЕДУЮЩЕМУ ОКНУ...
+                                _window.Close();
+                                var nextWindow = new AuthenticationWindow();
+                                nextWindow.Show();
+                                //ПЕРЕХОДИМ К СЛЕДУЮЩЕМУ ОКНУ
                             }
                             else if(answer=="USER:EXISTS")
                             {
@@ -115,7 +120,9 @@ namespace Client.ViewModels
 
                             if (answer=="SIGN:IN:SUCCESS")
                             {
+                                _window.Close();
                                 //ПЕРЕХОДИМ К СЛЕДУЮЩЕМУ ОКНУ...
+                                
                             }
                             else if(answer=="SIGN:IN:INCORRECT")
                             {
