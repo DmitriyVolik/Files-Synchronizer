@@ -10,6 +10,8 @@ namespace Server.Database
         
         public DbSet<Group> Groups { get; set; }
 
+        public DbSet<Session> Sessions { get; set; }
+
         public Context()
         {
             /*Database.EnsureDeleted();

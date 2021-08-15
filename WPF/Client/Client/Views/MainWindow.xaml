@@ -5,8 +5,14 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Client"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Синхронизатор файлов" Height="450" Width="400"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen">
     <Grid>
-        <Label Content="lgkrgrgn"></Label>
+        <StackPanel>
+            <Button Content="Выбрать папку" FontFamily="Arial" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="20" FontSize="15"></Button>
+            
+        </StackPanel>
+        <Button Content="Выход" FontFamily="Arial" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="20" FontSize="15"></Button>
     </Grid>
 </Window>

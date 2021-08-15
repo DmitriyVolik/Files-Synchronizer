@@ -5,7 +5,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net;  
-using System.Net.Sockets;  
+using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;  
 using System.Threading;
 using System.Threading.Tasks;
@@ -337,12 +338,26 @@ public class AsynchronousSocketListener
                     }
                     else
                     {
-                        db.Users.Add(new User()
-                            {Login = tempUser.Login, Password = PasswordHash.CreateHash(tempUser.Password)});
-
-                        db.SaveChanges();
+                        var user = new User()
+                            {Login = tempUser.Login, Password = PasswordHash.CreateHash(tempUser.Password)};
                         
-                        Send(handler, "ADD:SUCCESS");
+                        db.Users.Add(user);
+
+                        
+                        
+                        var bytes = new byte[16];
+                        using (var rng = new RNGCryptoServiceProvider())
+                        {
+                            rng.GetBytes(bytes);
+                        }
+                        
+                        string token = BitConverter.ToString(bytes).Replace("-", "").ToLower();
+                        Console.WriteLine(token);
+
+                        db.Sessions.Add(new Session() {Token = token, User = user});
+                        
+                        Send(handler, "ADD:SUCCESS:"+ token);
+                        db.SaveChanges();
                     }
                 }
 
@@ -360,7 +375,19 @@ public class AsynchronousSocketListener
                     
                     if (PasswordHash.ValidatePassword(tempUser.Password, candidate.Password))
                     {
-                        Send(handler, "SIGN:IN:SUCCESS");
+                        var bytes = new byte[16];
+                        using (var rng = new RNGCryptoServiceProvider())
+                        {
+                            rng.GetBytes(bytes);
+                        }
+                        
+                        string token = BitConverter.ToString(bytes).Replace("-", "").ToLower();
+                        
+                        db.Sessions.Add(new Session() {Token = token, User = candidate});
+
+                        db.SaveChanges();
+                        
+                        Send(handler, "SIGN:IN:SUCCESS:"+token);
                     }
                     else
                     {

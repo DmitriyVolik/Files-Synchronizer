@@ -29,7 +29,11 @@ namespace Client.ViewModels
             {
                 using (var client = TcpHelper.GetClient())
                 {
-                    var stream = client.GetStream();
+                    using (var stream = client.GetStream())
+                    {
+                        
+                    }
+                    
                 }
 
                 /*var client = TcpHelper.GetClient();
@@ -59,25 +63,28 @@ namespace Client.ViewModels
 
                         var user = new User(){Login = CurrentLogin, Password = pwBox.Password};
                         
-                        /*MessageBox.Show("ADD:USER:" + JsonWorker<User>.ObjToJson(user));*/
                         try
                         {
                             string answer;
                             using (var client = TcpHelper.GetClient())
                             {
-                                var stream = client.GetStream();
-                            
-                                PacketSender.SendJsonString(stream, "ADD:USER:" + JsonWorker<User>.ObjToJson(user));
+                                using (var stream = client.GetStream())
+                                {
+                                    PacketSender.SendJsonString(stream, "ADD:USER:" + JsonWorker<User>.ObjToJson(user));
 
-                                answer = PacketRecipient.GetJsonData(stream);
+                                    answer = PacketRecipient.GetJsonData(stream);
+                                }
                             }
 
-                            if (answer=="ADD:SUCCESS")
+                            if (answer.Contains("ADD:SUCCESS:"))
                             {
-                                _window.Close();
-                                var nextWindow = new AuthenticationWindow();
+                                string token = answer.Replace("ADD:SUCCESS:", "");
+                                
+                                File.WriteAllText(@"UserData.json", JsonWorker<UserData>.ObjToJson(new UserData(){SessionToken = token}));
+                                
+                                var nextWindow = new MainWindow();
                                 nextWindow.Show();
-                                //ПЕРЕХОДИМ К СЛЕДУЮЩЕМУ ОКНУ
+                                _window.Close();
                             }
                             else if(answer=="USER:EXISTS")
                             {
@@ -111,18 +118,23 @@ namespace Client.ViewModels
                             string answer;
                             using (var client = TcpHelper.GetClient())
                             {
-                                var stream = client.GetStream();
-                            
-                                PacketSender.SendJsonString(stream, "SIGN:IN:" + JsonWorker<User>.ObjToJson(user));
+                                using (var stream = client.GetStream())
+                                {
+                                    PacketSender.SendJsonString(stream, "SIGN:IN:" + JsonWorker<User>.ObjToJson(user));
 
-                                answer = PacketRecipient.GetJsonData(stream);
+                                    answer = PacketRecipient.GetJsonData(stream);
+                                }
                             }
 
-                            if (answer=="SIGN:IN:SUCCESS")
+                            if (answer.Contains("SIGN:IN:SUCCESS:"))
                             {
-                                _window.Close();
-                                //ПЕРЕХОДИМ К СЛЕДУЮЩЕМУ ОКНУ...
+                                string token = answer.Replace("SIGN:IN:SUCCESS:", "");
                                 
+                                
+                                var nextWindow = new MainWindow();
+                                nextWindow.Show();
+                                _window.Close();
+
                             }
                             else if(answer=="SIGN:IN:INCORRECT")
                             {

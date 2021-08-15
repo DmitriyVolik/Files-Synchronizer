@@ -17,29 +17,6 @@ namespace Client.Workers
         {
             return JsonSerializer.Deserialize<T>(jsonData);
         }
-
-        /*
-        //  Сериализация объекта типа Message в Json строку
-        public static string MessageToJson(Message message)
-        {
-            var settings = new JsonSerializerOptions()
-            {
-                WriteIndented = true
-            };
-            return JsonSerializer.Serialize(message, settings);
-        }
-        public static Message JsonToMessage(string jsonData)
-        {
-            return JsonSerializer.Deserialize<Message>(jsonData);
-        }
-
-        public static string UsersListToJson(List<User> users)
-        {
-            var settings = new JsonSerializerOptions()
-            {
-                WriteIndented = true
-            };
-            return JsonSerializer.Serialize(users, settings);
-        }*/
+        
     }
 }
