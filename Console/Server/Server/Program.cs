@@ -85,6 +85,7 @@ public class AsynchronousSocketListener
                 
             }
             Files = temp;
+            /*Console.WriteLine("Refresh");*/
             Thread.Sleep(5000);
         }
     }
@@ -314,7 +315,7 @@ public class AsynchronousSocketListener
                     }
                     catch (Exception e)
                     {
-                        throw;
+                        /*throw;*/
                     }
                 }
                 else
@@ -469,8 +470,8 @@ public class AsynchronousSocketListener
         }
         catch (Exception e)
         {
-            throw;
-            Console.WriteLine(e.ToString());  
+            /*throw;*/
+            /*Console.WriteLine(e.ToString());  */
         }  
     }
     
@@ -488,8 +489,8 @@ public class AsynchronousSocketListener
             
             // Complete sending the data to the remote device.  
             // handler.EndSendFile(ar);
-            int nextSentBytesCount = handler.EndSend(ar);
-
+            int nextSentBytesCount= handler.EndSend(ar);
+            
             long total = fileSendState.SetNextResultNGetRest(nextSentBytesCount);
             
             if (total > 0)
@@ -513,7 +514,8 @@ public class AsynchronousSocketListener
         }
         catch (Exception e)
         {
-            Console.WriteLine(e.ToString());  
+            
+            /*Console.WriteLine(e.ToString());  */
         }  
     }
 

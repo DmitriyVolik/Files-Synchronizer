@@ -40,26 +40,26 @@ namespace Chat.Packets
                         
                         do
                         {
-                            Console.WriteLine("start wait file");
+                            /*Console.WriteLine("start wait file");*/
                             
                             var buffer = new byte[client.SendBufferSize];
                             var bytes = 0;
                             
                             do
                             {
-                                Console.WriteLine("start write");
+                                /*Console.WriteLine("start write");*/
                                 bytes = stream.Read(buffer, 0, buffer.Length);
                                 count += bytes;
                                 output.Write(buffer, 0, bytes);
                             } while (stream.DataAvailable);
 
-
+                            Console.Clear();
                             Console.WriteLine("-------Server----------");
                             Console.WriteLine(candidateFile.Size);
                             Console.WriteLine(count);
                             Console.WriteLine("-------Client----------");
 
-                        } while (candidateFile.Size< count);
+                        } while (candidateFile.Size> count);
                     }
                 }
             }

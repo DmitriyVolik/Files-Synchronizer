@@ -132,11 +132,11 @@ namespace Client
 
                     Dirs.ClearEmptyDirs(mainDir);
 
-                    Console.WriteLine("---------------------------");
+                    /*Console.WriteLine("---------------------------");
                     
                     long totalSizeClient=0;
 
-                    List <FileM> clientFiles = new List<FileM>();
+                    List <FileM> clientFiles = new List<FileM>();*/
                     
                     /*while (totalSize != totalSizeClient)
                     {
@@ -156,6 +156,7 @@ namespace Client
                         Console.WriteLine(totalSizeClient);
                         Console.WriteLine("===================");
                     }*/
+                    return;
                     Thread.Sleep(5000);
                     
                 }
