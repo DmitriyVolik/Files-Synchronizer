@@ -14,8 +14,8 @@ namespace Client.ViewModels
 {
     public class AuthenticationWindowViewModel:BaseViewModel
     {
-        
-        
+
+        public UserData UserData { get; set; }
         public string CurrentLogin { get; set; }
 
         public readonly Window _window;
@@ -35,14 +35,23 @@ namespace Client.ViewModels
                     }
                     
                 }
-
-                /*var client = TcpHelper.GetClient();
-                var stream = client.GetStream();*/
             }
             catch (Exception e)
             {
                 MessageBox.Show("Сервер недоступен, попробуйте зайти позже", "Ошибка сервера");
                 Application.Current.Shutdown();
+            }
+
+            if (File.Exists(@"UserData.json"))
+            {
+                UserData = JsonWorker<UserData>.JsonToObj(File.ReadAllText(@"UserData.json"));
+
+                if (UserData.SessionToken!=null)
+                {
+                    var nextWindow = new MainWindow(UserData);
+                    nextWindow.Show();
+                    _window.Close();
+                }
             }
         }
 
@@ -78,11 +87,13 @@ namespace Client.ViewModels
 
                             if (answer.Contains("ADD:SUCCESS:"))
                             {
-                                string token = answer.Replace("ADD:SUCCESS:", "");
                                 
+                                
+                                string token = Encryptor.Encrypt(answer.Replace("ADD:SUCCESS:", ""));
+
                                 File.WriteAllText(@"UserData.json", JsonWorker<UserData>.ObjToJson(new UserData(){SessionToken = token}));
-                                
-                                var nextWindow = new MainWindow();
+
+                                var nextWindow = new MainWindow(UserData);
                                 nextWindow.Show();
                                 _window.Close();
                             }
@@ -131,7 +142,7 @@ namespace Client.ViewModels
                                 string token = answer.Replace("SIGN:IN:SUCCESS:", "");
                                 
                                 
-                                var nextWindow = new MainWindow();
+                                var nextWindow = new MainWindow(UserData);
                                 nextWindow.Show();
                                 _window.Close();
 
