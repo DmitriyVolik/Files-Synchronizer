@@ -9,7 +9,7 @@ namespace Client
         public MainWindow(UserData UserData)
         {
             InitializeComponent();
-            DataContext = new MainWindowViewModel(UserData);
+            DataContext = new MainWindowViewModel(UserData,this);
         }
     }
 }

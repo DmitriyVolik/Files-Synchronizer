@@ -10,6 +10,8 @@ using System.Security.Cryptography;
 using System.Text;  
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Configuration;
 using Server.Database;
 using Server.Files;
 using Server.Helpers;
@@ -198,109 +200,109 @@ public class AsynchronousSocketListener
   
             // Check for end-of-file tag. If it is not there, read
             // more data.  
-            content = state.sb.ToString(); 
-            
-            Console.WriteLine(content);
-            
-            if (content=="GET:FILES:LIST")
+            try
             {
-                Console.WriteLine(JsonWorker<List<FileM>>.ObjToJson(Files));
-                Console.WriteLine("-----------------------------------------------------");
-                Console.WriteLine(JsonWorker<List<FileM>>.ObjToJson(Files).Length);
-                Console.WriteLine("-----------------------------------------------------");
-                Send(handler, JsonWorker<List<FileM>>.ObjToJson(Files));
                 
-            } 
-            else if (content.Contains("GET:FILE:"))
-            {
-                string path = content.Replace("GET:FILE:", "");
-                Console.WriteLine(MainDirectory+path);
-                
-                if (File.Exists(MainDirectory+path))
+                content = state.sb.ToString();
+                if (content=="GET:FILES:LIST")
                 {
-                    try
+                    Console.WriteLine(JsonWorker<List<FileM>>.ObjToJson(Files));
+                    Console.WriteLine("-----------------------------------------------------");
+                    Console.WriteLine(JsonWorker<List<FileM>>.ObjToJson(Files).Length);
+                    Console.WriteLine("-----------------------------------------------------");
+                    Send(handler, JsonWorker<List<FileM>>.ObjToJson(Files));
+                
+                } 
+                else if (content.Contains("GET:FILE:"))
+                {
+                    string path = content.Replace("GET:FILE:", "");
+                    Console.WriteLine(MainDirectory+path);
+                
+                    if (File.Exists(MainDirectory+path))
                     {
-                        // !!! Отправлять так только если количество отправляемых байт - меньше
-                        // размера буфера приемника, иначе - циклически вызывать асинхронную отправку,
-                        // пока результаты ее прекращения не дадут в сумме отправляемый объем байт
-                        StateObject fileSendState = new StateObject();
+                        try
+                        {
+                            // !!! Отправлять так только если количество отправляемых байт - меньше
+                            // размера буфера приемника, иначе - циклически вызывать асинхронную отправку,
+                            // пока результаты ее прекращения не дадут в сумме отправляемый объем байт
+                            StateObject fileSendState = new StateObject();
                         
-                        long fileSize=Files.FirstOrDefault(x => x.Path == path).Size;
-                        const int maxSize=1000000000;
-                        if (fileSize<=maxSize)
-                        {
-                            String filePath = MainDirectory + path;
-                            byte[] fileByteArray = File.ReadAllBytes(filePath);
-                            state.SetGoal(fileByteArray.Length);
-                            handler.BeginSend(
-                                fileByteArray,
-                                0,
-                                fileByteArray.Length,
-                                SocketFlags.None,
-                                SendFileCallback,
-                                new object[]
-                                {
-                                    handler,
-                                    fileByteArray,
-                                    fileSendState,
-                                    fileSize,
-                                    maxSize
-                                    
-                                }
-                            );
-                            
-                        }
-                        else
-                        {
-                            StateObject fileReadState = new StateObject();
-                            fileReadState.SetGoal(fileSize);
-                            long total=0;
-                            byte[] buffer = new byte[maxSize];
-                            do
+                            long fileSize=Files.FirstOrDefault(x => x.Path == path).Size;
+                            const int maxSize=1000000000;
+                            if (fileSize<=maxSize)
                             {
-                                while (fileSendState.GetRest()>0)
-                                {
-                                    Thread.Sleep(100);
-                                }
-                                using (var fs = new FileStream(MainDirectory + path, FileMode.Open))
-                                {
-                                    long delta=fileSize-total;
-                                    long result;
-                                    fs.Position = total;
-                                    if (delta>maxSize)
+                                String filePath = MainDirectory + path;
+                                byte[] fileByteArray = File.ReadAllBytes(filePath);
+                                state.SetGoal(fileByteArray.Length);
+                                handler.BeginSend(
+                                    fileByteArray,
+                                    0,
+                                    fileByteArray.Length,
+                                    SocketFlags.None,
+                                    SendFileCallback,
+                                    new object[]
                                     {
-                                        result=fs.Read(buffer, 0, maxSize);
+                                        handler,
+                                        fileByteArray,
+                                        fileSendState,
+                                        fileSize,
+                                        maxSize
+                                    
                                     }
-                                    else
+                                );
+                            
+                            }
+                            else
+                            {
+                                StateObject fileReadState = new StateObject();
+                                fileReadState.SetGoal(fileSize);
+                                long total=0;
+                                byte[] buffer = new byte[maxSize];
+                                do
+                                {
+                                    while (fileSendState.GetRest()>0)
                                     {
-                                        result=fs.Read(buffer, 0, (int)delta);
+                                        Thread.Sleep(100);
                                     }
-                                    total=fileReadState.SetNextResultNGetRest(result);
-                                    
-                                    fileReadState.SetGoal(delta);
-                                    
-                                    handler.BeginSend(
-                                        buffer,
-                                        0,
-                                        buffer.Length,
-                                        SocketFlags.None,
-                                        SendFileCallback,
-                                        new object[]
+                                    using (var fs = new FileStream(MainDirectory + path, FileMode.Open))
+                                    {
+                                        long delta=fileSize-total;
+                                        long result;
+                                        fs.Position = total;
+                                        if (delta>maxSize)
                                         {
-                                            handler,
-                                            buffer,
-                                            fileSendState,
-                                            fileSize,
-                                            maxSize
+                                            result=fs.Read(buffer, 0, maxSize);
                                         }
-                                    );
-                                }
+                                        else
+                                        {
+                                            result=fs.Read(buffer, 0, (int)delta);
+                                        }
+                                        total=fileReadState.SetNextResultNGetRest(result);
+                                    
+                                        fileReadState.SetGoal(delta);
+                                    
+                                        handler.BeginSend(
+                                            buffer,
+                                            0,
+                                            buffer.Length,
+                                            SocketFlags.None,
+                                            SendFileCallback,
+                                            new object[]
+                                            {
+                                                handler,
+                                                buffer,
+                                                fileSendState,
+                                                fileSize,
+                                                maxSize
+                                            }
+                                        );
+                                    }
 
-                            } while (total<fileSize);
-                            handler.Shutdown(SocketShutdown.Both);  
-                            handler.Close();  
-                        }
-                        /* handler.BeginSendFile(
+                                } while (total<fileSize);
+                                handler.Shutdown(SocketShutdown.Both);  
+                                handler.Close();  
+                            }
+                            /* handler.BeginSendFile(
                             MainDirectory + path,
                             SendFileCallback,
                             new object[]
@@ -310,99 +312,119 @@ public class AsynchronousSocketListener
                                 MainDirectory + path
                             }
                         );  */
-                        Console.WriteLine("file send!!");
-                    }
-                    catch (Exception e)
-                    {
-                        throw;
-                    }
-                }
-                else
-                {
-                    Send(handler, "0");
-                }
-                
-                
-            }
-            else if (content.Contains("ADD:USER:"))
-            {
-                string data = content.Replace("ADD:USER:", "");
-
-                ClientUser tempUser = JsonWorker<ClientUser>.JsonToObj(data);
-
-                using (Context db = new Context())
-                {
-                    if (db.Users.FirstOrDefault(x => x.Login ==tempUser.Login)!=null)
-                    {
-                        Send(handler, "USER:EXISTS");
+                            Console.WriteLine("file send!!");
+                        }
+                        catch (Exception e)
+                        {
+                            throw;
+                        }
                     }
                     else
                     {
-                        var user = new User()
-                            {Login = tempUser.Login, Password = PasswordHash.CreateHash(tempUser.Password)};
-                        
-                        db.Users.Add(user);
-
-                        
-                        
-                        var bytes = new byte[16];
-                        using (var rng = new RNGCryptoServiceProvider())
-                        {
-                            rng.GetBytes(bytes);
-                        }
-                        
-                        string token = BitConverter.ToString(bytes).Replace("-", "").ToLower();
-                        Console.WriteLine(token);
-
-                        db.Sessions.Add(new Session() {Token = token, User = user});
-                        
-                        Send(handler, "ADD:SUCCESS:"+ token);
-                        db.SaveChanges();
+                        Send(handler, "0");
                     }
-                }
-
-
-            }
-            else if (content.Contains("SIGN:IN:"))
-            {
-                string data = content.Replace("SIGN:IN:", "");
-
-                ClientUser tempUser = JsonWorker<ClientUser>.JsonToObj(data);
                 
-                using (Context db = new Context())
+                
+                }
+                else if (content.Contains("ADD:USER:"))
                 {
-                    var candidate = db.Users.FirstOrDefault(x => x.Login == tempUser.Login);
+                    string data = content.Replace("ADD:USER:", "");
+
+                    ClientUser tempUser = JsonWorker<ClientUser>.JsonToObj(data);
+
+                    using (Context db = new Context())
+                    {
+                        if (db.Users.FirstOrDefault(x => x.Login ==tempUser.Login)!=null)
+                        {
+                            Send(handler, "USER:EXISTS");
+                        }
+                        else
+                        {
+                            var user = new User()
+                                {Login = tempUser.Login, Password = PasswordHash.CreateHash(tempUser.Password)};
+                        
+                            db.Users.Add(user);
+
+                        
+                        
+                            var bytes = new byte[16];
+                            using (var rng = new RNGCryptoServiceProvider())
+                            {
+                                rng.GetBytes(bytes);
+                            }
+                        
+                            string token = BitConverter.ToString(bytes).Replace("-", "").ToLower();
+                            Console.WriteLine(token);
+
+                            db.Sessions.Add(new Session() {Token = token, User = user});
+                        
+                            Send(handler, "ADD:SUCCESS:"+ token);
+                            db.SaveChanges();
+                        }
+                    }
+
+
+                }
+                else if (content.Contains("SIGN:IN:"))
+                {
+                    string data = content.Replace("SIGN:IN:", "");
+
+                    ClientUser tempUser = JsonWorker<ClientUser>.JsonToObj(data);
+                
+                    using (Context db = new Context())
+                    {
+                        var candidate = db.Users.FirstOrDefault(x => x.Login == tempUser.Login);
                     
-                    if (PasswordHash.ValidatePassword(tempUser.Password, candidate.Password))
-                    {
-                        var bytes = new byte[16];
-                        using (var rng = new RNGCryptoServiceProvider())
+                        if (PasswordHash.ValidatePassword(tempUser.Password, candidate.Password))
                         {
-                            rng.GetBytes(bytes);
-                        }
+                            var bytes = new byte[16];
+                            using (var rng = new RNGCryptoServiceProvider())
+                            {
+                                rng.GetBytes(bytes);
+                            }
                         
-                        string token = BitConverter.ToString(bytes).Replace("-", "").ToLower();
+                            string token = BitConverter.ToString(bytes).Replace("-", "").ToLower();
                         
-                        db.Sessions.Add(new Session() {Token = token, User = candidate});
+                            db.Sessions.Add(new Session() {Token = token, User = candidate});
 
-                        db.SaveChanges();
+                            db.SaveChanges();
                         
-                        Send(handler, "SIGN:IN:SUCCESS:"+token);
+                            Send(handler, "SIGN:IN:SUCCESS:"+token);
+                        }
+                        else
+                        {
+                            Send(handler, "SIGN:IN:INCORRECT");
+                        }
                     }
-                    else
+
+                }
+                else if (content.Contains("SIGN:OUT:"))
+                {
+                    string data = content.Replace("SIGN:OUT:", "");
+
+                    using (Context db = new Context())
                     {
-                        Send(handler, "SIGN:IN:INCORRECT");
+                        var candidate = db.Sessions.FirstOrDefault(x => x.Token == data);
+                        if (candidate!=null)
+                        {
+                            db.Sessions.Remove(candidate);
+                            db.SaveChanges();
+                        }
+                    
                     }
                 }
 
+                else {  
+                    // Not all data received. Get more.  
+                    handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,  
+                        new AsyncCallback(ReadCallback), state);  
+                }
             }
-            
-            else {  
-                // Not all data received. Get more.  
-                handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,  
-                    new AsyncCallback(ReadCallback), state);  
-            }  
-            
+            catch (Exception e)
+            {
+                // ignored
+            }
+
             /*if (content.IndexOf("<EOF>") > -1) {  
                 // All the data has been read from the
                 // client. Display it on the console.  
@@ -516,15 +538,13 @@ public class AsynchronousSocketListener
             Console.WriteLine(e.ToString());  
         }  
     }
-
-    public static int Main(String[] args)
+    
+    
+    public static void Main(String[] args)
     {
-        /*Console.WriteLine(ConfigurationManager.ConnectionStrings["Database"].ConnectionString);*/
-
-
+       
+        
         StartListening();
-
-
-        return 0;
+        
     }
 }

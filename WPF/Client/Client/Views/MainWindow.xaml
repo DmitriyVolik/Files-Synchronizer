@@ -10,9 +10,9 @@
         WindowStartupLocation="CenterScreen">
     <Grid>
         <StackPanel>
-            <Button Content="Выбрать папку" FontFamily="Arial" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="20" FontSize="15"></Button>
+            <Button Content="Выбрать папку" Command="{Binding SelectFolderBtn}" FontFamily="Arial" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="20" FontSize="15"></Button>
             <Label FontSize="15" Content="Текущая папка:" FontFamily="Arial"></Label>
-            <TextBox Text="" ScrollViewer.HorizontalScrollBarVisibility="Auto" FontSize="15" IsReadOnly="True" Width="380" FontFamily="Arial"></TextBox>
+            <TextBox Text="{Binding FolderPath}" ScrollViewer.HorizontalScrollBarVisibility="Auto" FontSize="15" IsReadOnly="True" Width="380" FontFamily="Arial"></TextBox>
             <Button Content="Синхронизировать файлы" FontFamily="Arial" Width="200" Margin="0 60 0 40" FontSize="15" ></Button>
             <Button Content="Добавить в планировщик" FontFamily="Arial" Width="200" FontSize="15"></Button>
         </StackPanel>

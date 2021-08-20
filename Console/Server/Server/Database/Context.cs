@@ -1,5 +1,6 @@
 using System.Configuration;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Server.Models;
 
 namespace Server.Database
@@ -20,10 +21,9 @@ namespace Server.Database
  
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-
-            /*optionsBuilder.UseNpgsql(ConfigurationManager.ConnectionStrings["Database"].ConnectionString);*/
-
-            optionsBuilder.UseNpgsql("Host=localhost;Database=FilesSynchronizer;Username=postgres;Password=database");
+            var builder= new ConfigurationBuilder().AddJsonFile("appsettings.json", true, true);
+            var config = builder.Build();
+            optionsBuilder.UseNpgsql(config["Database"]);
         }
 
     }

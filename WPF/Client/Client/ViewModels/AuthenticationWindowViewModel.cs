@@ -14,17 +14,15 @@ namespace Client.ViewModels
 {
     public class AuthenticationWindowViewModel:BaseViewModel
     {
-
-        public UserData UserData { get; set; }
+        private readonly Window _window;
+        private UserData UserData { get; set; }
         public string CurrentLogin { get; set; }
-
-        public readonly Window _window;
 
         public AuthenticationWindowViewModel(Window window)
         {
-            CurrentLogin = "";
             _window = window;
-            
+            CurrentLogin = "";
+
             try
             {
                 using (var client = TcpHelper.GetClient())
@@ -45,13 +43,17 @@ namespace Client.ViewModels
             if (File.Exists(@"UserData.json"))
             {
                 UserData = JsonWorker<UserData>.JsonToObj(File.ReadAllText(@"UserData.json"));
-
                 if (UserData.SessionToken!=null)
                 {
                     var nextWindow = new MainWindow(UserData);
                     nextWindow.Show();
                     _window.Close();
                 }
+                
+            }
+            else
+            {
+                UserData = new UserData() {SessionToken = null, FolderPath = null};
             }
         }
 
@@ -87,15 +89,17 @@ namespace Client.ViewModels
 
                             if (answer.Contains("ADD:SUCCESS:"))
                             {
-                                
-                                
-                                string token = Encryptor.Encrypt(answer.Replace("ADD:SUCCESS:", ""));
 
-                                File.WriteAllText(@"UserData.json", JsonWorker<UserData>.ObjToJson(new UserData(){SessionToken = token}));
+                                string token = Encryptor.EncodeDecrypt(answer.Replace("ADD:SUCCESS:", ""));
+
+                                UserData.SessionToken = token;
+
+                                File.WriteAllText(@"UserData.json", JsonWorker<UserData>.ObjToJson(UserData));
 
                                 var nextWindow = new MainWindow(UserData);
                                 nextWindow.Show();
                                 _window.Close();
+                                
                             }
                             else if(answer=="USER:EXISTS")
                             {
@@ -133,14 +137,18 @@ namespace Client.ViewModels
                                 {
                                     PacketSender.SendJsonString(stream, "SIGN:IN:" + JsonWorker<User>.ObjToJson(user));
 
+                                    
                                     answer = PacketRecipient.GetJsonData(stream);
                                 }
                             }
 
                             if (answer.Contains("SIGN:IN:SUCCESS:"))
                             {
-                                string token = answer.Replace("SIGN:IN:SUCCESS:", "");
+                                string token = Encryptor.EncodeDecrypt(answer.Replace("SIGN:IN:SUCCESS:", ""));
                                 
+                                UserData.SessionToken = token;
+
+                                File.WriteAllText(@"UserData.json", JsonWorker<UserData>.ObjToJson(UserData));
                                 
                                 var nextWindow = new MainWindow(UserData);
                                 nextWindow.Show();

@@ -1,28 +1,37 @@
 using System;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Windows;
+using Microsoft.Extensions.Configuration;
 
 namespace Client.Helpers
 {
     public class Encryptor
     {
-        static readonly UnicodeEncoding unicodeEncoding = new UnicodeEncoding();
+        private static ushort secretKey;
 
-        public static string Encrypt(string data)
+        static Encryptor()
         {
-            byte[] secret = ProtectedData.Protect(unicodeEncoding.GetBytes(data), null, DataProtectionScope.CurrentUser);
-            string base64 = Convert.ToBase64String(secret);
-            return base64;
+            var builder= new ConfigurationBuilder().AddJsonFile("appsettings.json", true, true);
+            var config = builder.Build();
+            secretKey = Convert.ToUInt16(config["SecretKey"]);
         }
         
-        public static string Decrypt(string data)
+        public static string EncodeDecrypt(string str)
         {
-            
-            byte[] backagain = Convert.FromBase64String(data);
-            byte[] clearbytes = ProtectedData.Unprotect(backagain, null, DataProtectionScope.CurrentUser);
-            string roundtripped = unicodeEncoding.GetString(clearbytes);
-            return roundtripped;
-
+            var ch = str.ToArray(); 
+            string newStr = "";      
+            foreach (var c in ch)  
+                newStr += TopSecret(c);  
+            return newStr;
+        }
+ 
+        public static char TopSecret(char character)
+        {
+            character = (char)(character ^ secretKey);
+            return character;
         }
         
 
