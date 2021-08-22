@@ -6,11 +6,12 @@ namespace Server.Models
     {
         public int Id { get; set; }
         
+        [Required(AllowEmptyStrings = false)]
         [MaxLength(16)]
         public string Name { get; set; }
 
+        [Required]
         public string FolderPath { get; set; }
-
-
+        
     }
 }

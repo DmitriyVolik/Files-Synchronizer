@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
+using System.Windows.Documents;
 using Client.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Server.Database;
@@ -14,7 +17,7 @@ namespace Server.ViewModels
     {
         public ObservableCollection<User> Users { get; set;}
         public ObservableCollection<Group> Groups { get; set;}
-        
+
         public MainWindowViewModel()
         {
             using (Context db = new Context())
@@ -22,7 +25,7 @@ namespace Server.ViewModels
                 var tempUsers = db.Users.Include(x=>x.Group).ToList();
                 var tempGroups = db.Groups.ToList();
                 
-                Users=ObservableHelper<User>.ObjectsToObs(tempUsers);
+                Users=ObservableHelper<User>.UsersToObs(tempUsers);
                 
                 Groups=ObservableHelper<Group>.ObjectsToObs(tempGroups);
             }
