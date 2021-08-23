@@ -9,32 +9,28 @@ namespace Server.Helpers
 {
     public class ObservableHelper<T>
     {
-        public static ObservableCollection<T> ObjectsToObs(List<T> objects)
+        public static void ObjectsToObs(List<T> users, ObservableCollection<T> obs)
         {
-            var res = new ObservableCollection<T>();
-            
-            foreach (var obj in objects) 
-            {
-                res.Add(obj);
-            }
-            return res;
-        }
 
-        public static ObservableCollection<User> UsersToObs(List<User> users)
+            foreach (var user in users)
+            {
+                obs.Add(user);
+            }
+
+        }
+        
+        public static void UsersToObs(List<User> users, ObservableCollection<User> usersOb)
         {
-            var res = new ObservableCollection<User>();
-            
             foreach (var user in users)
             {
                 if (user.Group==null)
                 {
                     user.Group = new Group() {Name = ""};
                 }
-                res.Add(user);
+                
+                usersOb.Add(user);
             }
-            
-            return res;
-            
+
         }
     }
 }
