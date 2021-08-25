@@ -8,6 +8,7 @@
         Title="MainWindow" Height="450" Width="800"
         MinHeight="450"
         MinWidth="800"
+        WindowStartupLocation="CenterScreen"
 >
     <Window.Resources>
         <CollectionViewSource x:Key="AllGroups" Source="{Binding Groups}" />
@@ -28,10 +29,10 @@
 
         </Grid.ColumnDefinitions>
         <Label FontSize="15" FontFamily="Arial" Content="Пользователи" VerticalAlignment="Bottom" HorizontalAlignment="Left"></Label>
-        <DataGrid Grid.Column="0" Grid.Row="1" VerticalAlignment="Top" MinColumnWidth="50" HorizontalAlignment="Left" FontSize="15" FontFamily="Arial" ItemsSource="{Binding Users}" CanUserAddRows="False" AutoGenerateColumns="False">
+        <DataGrid Grid.Column="0"  Grid.Row="1" VerticalAlignment="Top" MinColumnWidth="50" HorizontalAlignment="Left" FontSize="15" FontFamily="Arial" ItemsSource="{Binding Users}" CanUserAddRows="False" AutoGenerateColumns="False">
             <DataGrid.Columns>
                 <DataGridTextColumn IsReadOnly="True" Header="Имя" Binding="{Binding Path=Login}"/>
-                <DataGridComboBoxColumn SelectedValuePath="{Binding Name}" SelectedValueBinding="{Binding Group}" DisplayMemberPath="Name" ItemsSource="{Binding Source={StaticResource AllGroups}}"></DataGridComboBoxColumn>
+                <DataGridComboBoxColumn Header="Группа" SelectedValuePath="{Binding Name}" SelectedValueBinding="{Binding Group}" DisplayMemberPath="Name" ItemsSource="{Binding Source={StaticResource AllGroups}}"></DataGridComboBoxColumn>
             </DataGrid.Columns>
         </DataGrid>
         
@@ -42,7 +43,7 @@
                 <Button Content="Сброс" Padding="5" FontSize="15" FontFamily="Arial" Margin="0 5 5 0"></Button>
             </StackPanel>
         </StackPanel>
-        <Button Grid.Row="1" Grid.Column="1" Width="100" Height="30" Content="Обновить" Command="{Binding RefreshBtn}" Padding="5" FontSize="15" FontFamily="Arial" Margin="0 0 0 0"></Button>
+        <Button Grid.Row="1" Padding="5" FontSize="15" FontFamily="Arial" Grid.Column="1" Width="160" Height="30" Margin="0 0 0 0" Content="Исключить из группы"></Button>        
         
         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Grid.Column="0" Grid.Row="1" ZIndex="2" Grid.ColumnSpan="5" Margin="0 270 0 0">
             <Button Content="Загрузить из ДБ" Command="{Binding ResetBtn}" Margin="0  0 0 25"  FontSize="15" FontFamily="Arial" Padding="5"></Button>
@@ -51,20 +52,22 @@
         
         <Line Grid.Row="0" Grid.RowSpan="2" HorizontalAlignment="Center" Grid.Column="2" Stroke="Black" StrokeThickness="4" X1="0" Y1="1200" X2="0" Y2="0"></Line>
         <Label Grid.Row="0" Grid.Column="4" FontSize="15" FontFamily="Arial" Content="Группы" VerticalAlignment="Bottom" HorizontalAlignment="Right"></Label>
-        <DataGrid Grid.Column="4" Grid.Row="1" FontSize="15" FontFamily="Arial" AutoGenerateColumns="False" VerticalAlignment="Top" HorizontalAlignment="Right" ItemsSource="{Binding Groups}" CanUserAddRows="False" IsReadOnly="True">
+        <DataGrid SelectedItem="{Binding SelectedGroup}" Grid.Column="4" Grid.Row="1" FontSize="15" FontFamily="Arial" AutoGenerateColumns="False" VerticalAlignment="Top" HorizontalAlignment="Right" ItemsSource="{Binding  Source={StaticResource AllGroups}}" CanUserAddRows="False" >
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Название" Binding="{Binding Path=Name}"/>
-                <DataGridTextColumn MinWidth="193" Header="Папка" Binding="{Binding FolderPath}"/>
+                <DataGridTextColumn IsReadOnly="True" Header="Название" Binding="{Binding Path=Name}"/>
+                <DataGridTextColumn IsReadOnly="True" MinWidth="193" Header="Папка" Binding="{Binding FolderPath}"/>
             </DataGrid.Columns>
         </DataGrid>
         
-        <Button Grid.Column="3" Grid.Row="1" Padding="5" Width="80" Height="60" FontSize="15" Margin="0 0 0 250" FontFamily="Arial">
+        <Button Grid.Column="3" Grid.Row="1" Padding="5" Command="{Binding AddGroupBtn}" Width="80" Height="60" FontSize="15" Margin="0 0 0 250" FontFamily="Arial">
             <TextBlock TextAlignment="Center">Создать <LineBreak/>группу</TextBlock>
         </Button>
         
-        <Button Grid.Column="3" Grid.Row="1" Padding="5" Width="80" Height="60" FontSize="15" Margin="0 0 0 0" FontFamily="Arial">
+        <Button Command="{Binding EditBtn}" Grid.Column="3" Grid.Row="1" Padding="5" Width="80" Height="60" FontSize="15" Margin="0 0 0 0" FontFamily="Arial">
             <TextBlock TextAlignment="Center">Изменить<LineBreak/>группу</TextBlock>
         </Button>
+        
+        
         
     </Grid>
 </Window>

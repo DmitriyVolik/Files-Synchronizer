@@ -20,6 +20,7 @@ namespace Server.ViewModels
     {
         public ObservableCollection<User> Users { get; set; } = new ObservableCollection<User>();
         public ObservableCollection<Group> Groups { get; set;}= new ObservableCollection<Group>();
+        public Group SelectedGroup { get; set; }
 
         private Window _window;
 
@@ -37,23 +38,9 @@ namespace Server.ViewModels
                 return new RelayCommand(
                     obj =>
                     {
-                        using (Context db = new Context())
-                        {
-                            foreach (var user in db.Users)
-                            {
-                                var candidate = Users.FirstOrDefault(x => x.Id == user.Id);
-                                if (candidate==null)
-                                {
-                                    db.Users.Remove(user);
-                                }
-                                else if(candidate.Group!= user.Group && candidate.Group.Name!="")
-                                {
-                                    user.Group = candidate.Group;
-                                }
-                            }
-
-                            db.SaveChanges();
-                        }
+                        DBHelper.SaveUsers(Users);
+                        
+                        DBHelper.SaveGroupsDeleted(Groups);
 
                         MessageBox.Show("Изменения сохранены!");
                     }
@@ -70,9 +57,6 @@ namespace Server.ViewModels
                 return new RelayCommand(
                     obj =>
                     {
-                        Users.Clear();
-                        Groups.Clear();
-
                         DBHelper.LoadAll(Users, Groups);
                     }
                 );
@@ -87,7 +71,7 @@ namespace Server.ViewModels
                     obj =>
                     {
                         _window.IsEnabled = false;
-                        Window addWindow = new GroupWindow();
+                        Window addWindow = new GroupWindow(this);
                         addWindow.Owner = _window;
                         addWindow.Show();
                         
@@ -95,7 +79,36 @@ namespace Server.ViewModels
                 );
             }
         }
+
+        public RelayCommand EditBtn
+        {
+            get
+            {
+                return new RelayCommand(
+                    obj =>
+                    {
+                        if (SelectedGroup==null)
+                        {
+                            MessageBox.Show("Не выбрана группа!");
+                            return;
+                        }
+                        Window addWindow = new GroupWindow(this, true);
+                        _window.IsEnabled=false;
+                        addWindow.Owner = _window;
+                        addWindow.Show();
+                    }
+                );
+            }
+        }
         
         
+        public void EditGroup(Group group)
+        {
+            var candidate = Groups.FirstOrDefault(x => x.Id == group.Id);
+            Groups.Remove(candidate);
+
+            Groups.Add(group);
+        }
+
     }
 }

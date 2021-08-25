@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace Server.Models
@@ -12,6 +13,7 @@ namespace Server.Models
 
         [Required]
         public string FolderPath { get; set; }
+        
         
     }
 }

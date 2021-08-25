@@ -4,16 +4,22 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Server.Views"
+        xmlns:visualBasic="clr-namespace:Microsoft.VisualBasic;assembly=Microsoft.VisualBasic.Core"
         mc:Ignorable="d"
         Title="GroupWindow" Height="350" Width="300"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
         Topmost="True"
-        Closing="Window_Closing"  
-        >
+>
     <Grid>
-        <StackPanel>
-            
+        
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Label Content="Название:" HorizontalAlignment="Center" FontSize="15" FontFamily="Arial"></Label>
+            <TextBox Text="{Binding Name}" FontSize="15" Width="170" FontFamily="Arial" Padding="5" MaxLength="16" Margin="0 0 0 20"></TextBox>
+            <Label Content="Текущая папка:" HorizontalAlignment="Center" FontSize="15" FontFamily="Arial" ></Label>
+            <TextBox Text="{Binding FolderPath}" HorizontalScrollBarVisibility="Auto" FontSize="15" FontFamily="Arial" Width="280" Padding="5" Margin="0 0 0 20"></TextBox>
+            <Button FontSize="15" Width="130" FontFamily="Arial" Padding="5" Content="Выбрать папку" Margin="0 0 0 20"></Button>
+            <Button Command="{Binding SaveBtn}" FontSize="15" Width="100" FontFamily="Arial" Padding="5" Content="Сохранить"></Button>
             
         </StackPanel>
     </Grid>

@@ -19,6 +19,8 @@ namespace Server.Models
         public string Password { get; set; }
         
         public Group Group { get; set; }
+        
+        
 
     }
 }

@@ -1,20 +1,22 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
+using Server.Models;
 using Server.ViewModels;
 
 namespace Server.Views
 {
     public partial class GroupWindow : Window
     {
-        public GroupWindow()
+
+        public Group Group { get; set; }
+
+        public GroupWindow(MainWindowViewModel mainWindowViewModel, bool isEdit=false)
         {
             InitializeComponent();
-            DataContext = new GroupWindowViewModel(this);
+            DataContext = new GroupWindowViewModel(this,mainWindowViewModel,isEdit);
         }
         
-        void Window_Closing(object sender, CancelEventArgs e)
-        {
-            this.Owner.IsEnabled = true;
-        }
+        
     }
 }
