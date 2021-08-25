@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Windows;
 using Microsoft.EntityFrameworkCore;
 using Server.Database;
 using Server.Models;
@@ -33,8 +34,12 @@ namespace Server.Helpers
                 {
                     var candidate = users.FirstOrDefault(x => x.Id == user.Id);
                     if (candidate==null) db.Users.Remove(user);
-                    else if(candidate.Group!= user.Group) user.Group = candidate.Group;
-                                
+                    else
+                    {
+                        user.Group = candidate.Group;
+                    }
+                    
+
                 }
 
                 db.SaveChanges();
@@ -68,6 +73,46 @@ namespace Server.Helpers
                 db.SaveChanges();
             }
         }
+
+
+        public static bool IsChanged(ObservableCollection<User> users)
+        {
+            using (Context db = new Context())
+            {
+                var dbUsers = db.Users.Include(x => x.Group);
+
+                foreach (var user in dbUsers)
+                {
+                    var candidate = users.FirstOrDefault(x => x.Id == user.Id);
+                    if (candidate == null) 
+                    {
+                        return true;
+                    }
+                    
+                    if (user.Group==null && candidate.Group==null)
+                    {
+                        continue;
+                    }
+                    try
+                    {
+                        if (candidate.Group.Id!=user.Group.Id)
+                        {
+                            return true;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            
+        }
+        
+
 
     }
     

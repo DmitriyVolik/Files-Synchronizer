@@ -22,6 +22,8 @@ namespace Server.ViewModels
         public ObservableCollection<Group> Groups { get; set;}= new ObservableCollection<Group>();
         public Group SelectedGroup { get; set; }
 
+        public User SelectedUser { get; set;}
+
         private Window _window;
 
         public MainWindowViewModel(Window window)
@@ -39,7 +41,6 @@ namespace Server.ViewModels
                     obj =>
                     {
                         DBHelper.SaveUsers(Users);
-                        
                         DBHelper.SaveGroupsDeleted(Groups);
 
                         MessageBox.Show("Изменения сохранены!");
@@ -102,13 +103,28 @@ namespace Server.ViewModels
         }
         
         
-        public void EditGroup(Group group)
+        public RelayCommand SearchBtn
         {
-            var candidate = Groups.FirstOrDefault(x => x.Id == group.Id);
-            Groups.Remove(candidate);
-
-            Groups.Add(group);
+            get
+            {
+                return new RelayCommand(
+                    obj =>
+                    {
+                        
+                        if (DBHelper.IsChanged(Users))
+                        {
+                            MessageBox.Show("Change");
+                        }
+                        else
+                        {
+                            MessageBox.Show("NE change");
+                        }
+                    }
+                );
+            }
         }
-
+        
+        
+        
     }
 }

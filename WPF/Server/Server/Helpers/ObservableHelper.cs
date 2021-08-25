@@ -11,12 +11,10 @@ namespace Server.Helpers
     {
         public static void ObjectsToObs(List<T> objects, ObservableCollection<T> obs)
         {
-
             foreach (var obj in objects)
             {
                 obs.Add(obj);
             }
-
         }
     }
 }

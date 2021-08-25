@@ -65,6 +65,11 @@ namespace Server.ViewModels
                     obj =>
                     {
                         _window.Owner.IsEnabled = true;
+                        if (Name.Length<4)
+                        {
+                            MessageBox.Show("Минимальное количество символов в названии 4", "Ошибка");
+                            return;
+                        }
                         if (_isEdit==false)
                         {
                             var newGroup = new Group() {Name = Name, FolderPath = FolderPath};
