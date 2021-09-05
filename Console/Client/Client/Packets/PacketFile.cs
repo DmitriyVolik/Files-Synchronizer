@@ -54,12 +54,12 @@ namespace Chat.Packets
                             } while (stream.DataAvailable);
 
 
-                            Console.WriteLine("-------Server----------");
+                            /*Console.WriteLine("-------Server----------");
                             Console.WriteLine(candidateFile.Size);
                             Console.WriteLine(count);
-                            Console.WriteLine("-------Client----------");
+                            Console.WriteLine("-------Client----------");*/
 
-                        } while (candidateFile.Size< count);
+                        } while (candidateFile.Size> count);
                     }
                 }
             }

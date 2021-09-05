@@ -76,7 +76,7 @@ namespace Client.ViewModels
                     {
                         var dlg = new CommonOpenFileDialog();
                         dlg.IsFolderPicker = true;
-
+                        
                         if (dlg.ShowDialog() == CommonFileDialogResult.Ok) 
                         {
                             FolderPath = dlg.FileName;

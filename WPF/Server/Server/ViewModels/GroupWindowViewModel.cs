@@ -1,9 +1,11 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using Client.ViewModels;
+using Microsoft.WindowsAPICodePack.Dialogs;
 using Server.Database;
 using Server.Helpers;
 using Server.Models;
@@ -83,16 +85,6 @@ namespace Server.ViewModels
                         }
                         else
                         {
-                            
-
-                            /*candidate.Name = Name;
-                            candidate.FolderPath = FolderPath;
-                            
-                            _mainWindow.Groups.Add(new Group(){Name = "wdasd", FolderPath = "wdasd"});*/
-                            
-
-
-                            /*OnPropertyChanged("Groups");*/
 
                             using (Context db = new Context())
                             {
@@ -106,26 +98,28 @@ namespace Server.ViewModels
                             }
                             
                             DBHelper.LoadAll(_mainWindow.Users, _mainWindow.Groups);
-
-                            
-                            
-                            
-
-                            /*var users = _mainWindow.Users.Where(x => x.Group!=null);*/
-
-                            /*foreach (var user in users.Where(x=>x.Group.Id==newGroup.Id))
-                            {
-                                user.Group =_mainWindow.Groups.FirstOrDefault(x=> x.Id!=newGroup.Id);
-                            }*/
-                            
-                            /*_mainWindow.Groups.Remove(candidate);
-                            
-                            _mainWindow.Groups.Add(newGroup);*/
-                            
-                            //ПОСЛЕ ИЗМЕНЕНИЯ ГРУППЫ СОХРАНЯТЬ В ДБ И СКАЧИВАТЬ ПОВТОРНО ДЛЯ КОРРЕКТНОГО ОТОБРАЖЕНИЯ!!!
-                            
                         }
                         _window.Close();
+                    }
+                );
+            }
+        }
+
+        public RelayCommand SelectFolder
+        {
+            get
+            {
+                return new RelayCommand(
+                    obj =>
+                    {
+                       
+                        var dlg = new CommonOpenFileDialog();
+                        dlg.IsFolderPicker = true;
+                        
+                        if (dlg.ShowDialog() == CommonFileDialogResult.Ok) 
+                        {
+                            FolderPath = dlg.FileName;
+                        }
                     }
                 );
             }

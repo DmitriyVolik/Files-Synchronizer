@@ -16,8 +16,14 @@ namespace Server.Files
             {
                 /*ProcessFile(fileName);*/
                 FileM file = new FileM(){Path = fileName.Replace(ConfigurationManager.AppSettings.Get("MainDirectory"), String.Empty) };
+                var fileSize= new FileInfo(fileName).Length;
+                
+                if (fileSize>AsynchronousSocketListener.maxSize)
+                {
+                    continue;
+                }
+                file.Size = fileSize;
                 file.Hash = CreateFileHash.CreateMD5(fileName);
-                file.Size = new FileInfo(fileName).Length;
                 list.Add(file);
             }
 

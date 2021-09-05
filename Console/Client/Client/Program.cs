@@ -19,152 +19,132 @@ namespace Client
         public static void Main(string[] args)
         {
             var mainDir = ConfigurationManager.AppSettings.Get("MainDirectory");
-
-            while (true)
+            
+            try
             {
-                try
+                var serverFiles = new List<FileM>();
+
+                string data;
+
+                using (var client = TcpHelper.GetClient())
                 {
-                    var serverFiles = new List<FileM>();
-
-                    string data;
-
-                    using (var client = TcpHelper.GetClient())
+                    
+                    using (var stream = client.GetStream())
                     {
+                        Console.WriteLine(client.SendBufferSize);
+                        PacketSender.SendJsonString(stream, "GET:FILES:LIST");
+
+                        data = PacketRecipient.GetJsonData(stream, client.SendBufferSize);
                         
-                        using (var stream = client.GetStream())
-                        {
-                            Console.WriteLine(client.SendBufferSize);
-                            PacketSender.SendJsonString(stream, "GET:FILES:LIST");
-
-                            data = PacketRecipient.GetJsonData(stream, client.SendBufferSize);
-                            
-                        }
                     }
-                    
-                    Console.WriteLine(data);
-                    Console.WriteLine("-----------------");
-                    
-                    serverFiles = JsonWorker.JsonToFiles(data);
+                }
+                
+                Console.WriteLine(data);
+                Console.WriteLine("-----------------");
+                
+                serverFiles = JsonWorker.JsonToFiles(data);
 
-                    if (serverFiles.Count == 0)
+                if (serverFiles.Count == 0)
+                {
+                    DirectoryInfo folder = new DirectoryInfo(mainDir);
+
+                    foreach (FileInfo file in folder.GetFiles())
                     {
-                        DirectoryInfo folder = new DirectoryInfo(mainDir);
-
-                        foreach (FileInfo file in folder.GetFiles())
-                        {
-                            file.Delete();
-                        }
-
-                        foreach (DirectoryInfo dir in folder.GetDirectories())
-                        {
-                            dir.Delete(true);
-                        }
+                        file.Delete();
                     }
 
-
-                    var files = new List<FileM>();
-
-                    ScanFiles.ProcessDirectory(mainDir, files);
-
-                    long totalSize = 0;
-                    
-                    foreach (var item in serverFiles)
+                    foreach (DirectoryInfo dir in folder.GetDirectories())
                     {
-                        totalSize += item.Size;
+                        dir.Delete(true);
+                    }
+                }
 
-                        if (item.Size == 0)
+
+                var files = new List<FileM>();
+
+                ScanFiles.ProcessDirectory(mainDir, files);
+
+                long totalSize = 0;
+                
+                foreach (var item in serverFiles)
+                {
+                    totalSize += item.Size;
+
+                    if (item.Size == 0)
+                    {
+                        /*if (!Directory.Exists(item.Path))
                         {
-                            /*if (!Directory.Exists(item.Path))
-                            {
-                                Directory.CreateDirectory(mainDir+Path.GetDirectoryName(item.Path));
-                            }*/
+                            Directory.CreateDirectory(mainDir+Path.GetDirectoryName(item.Path));
+                        }*/
+                        continue;
+                    }
+
+                    FileM selectedItem = files.FirstOrDefault(x => x.Path == item.Path);
+
+                    if (selectedItem == null)
+                    {
+                        PacketFile.GetFile(item.Path, serverFiles);
+                        continue;
+                    }
+                    else
+                    {
+                        Console.WriteLine(selectedItem.Path);
+                    }
+
+                    if (item.Size != selectedItem.Size)
+                    {
+                        File.Delete(mainDir + selectedItem.Path);
+                        PacketFile.GetFile(item.Path,serverFiles);
+                    }
+                    else
+                    {
+                        string hash;
+
+                        try
+                        {
+                            hash = CreateFileHash.CreateMD5(mainDir + selectedItem.Path);
+                        }
+                        catch (IOException)
+                        {
                             continue;
                         }
 
-                        FileM selectedItem = files.FirstOrDefault(x => x.Path == item.Path);
-
-                        if (selectedItem == null)
-                        {
-                            PacketFile.GetFile(item.Path, serverFiles);
-                            continue;
-                        }
-                        else
-                        {
-                            Console.WriteLine(selectedItem.Path);
-                        }
-
-                        if (item.Size != selectedItem.Size)
+                        if (hash != item.Hash)
                         {
                             File.Delete(mainDir + selectedItem.Path);
-                            PacketFile.GetFile(item.Path,serverFiles);
+                            PacketFile.GetFile(item.Path,serverFiles );
                         }
-                        else
-                        {
-                            string hash;
-
-                            try
-                            {
-                                hash = CreateFileHash.CreateMD5(mainDir + selectedItem.Path);
-                            }
-                            catch (IOException)
-                            {
-                                continue;
-                            }
-
-                            if (hash != item.Hash)
-                            {
-                                File.Delete(mainDir + selectedItem.Path);
-                                PacketFile.GetFile(item.Path,serverFiles );
-                            }
-                        }
-
-                        
-                    }
-                    foreach (var i in files)
-                    {
-                        if (!serverFiles.Exists(x => x.Path == i.Path))
-                        {
-                            File.Delete(mainDir + i.Path);
-                            continue;
-                        }
-                        
                     }
 
-                    Dirs.ClearEmptyDirs(mainDir);
-
-                    Console.WriteLine("---------------------------");
-                    
-                    long totalSizeClient=0;
-
-                    List <FileM> clientFiles = new List<FileM>();
-                    
-                    /*while (totalSize != totalSizeClient)
-                    {
-                        
-                        Thread.Sleep(500);
-                        
-                        clientFiles.Clear();
-                        
-                        ScanFiles.ProcessDirectory(mainDir, clientFiles);
-                        totalSizeClient = 0;
-                        foreach (var item in clientFiles)
-                        {
-                            totalSizeClient += item.Size;
-                        }
-                        
-                        Console.WriteLine(totalSize);
-                        Console.WriteLine(totalSizeClient);
-                        Console.WriteLine("===================");
-                    }*/
-                    Thread.Sleep(5000);
                     
                 }
-                catch (Exception e)
+                foreach (var i in files)
                 {
-                    Console.WriteLine(e.Message);
-                    throw;
+                    if (!serverFiles.Exists(x => x.Path == i.Path))
+                    {
+                        File.Delete(mainDir + i.Path);
+                        continue;
+                    }
+                    
                 }
+
+                Dirs.ClearEmptyDirs(mainDir);
+
+                Console.WriteLine("---------------------------");
+                
+                long totalSizeClient=0;
+
+                List <FileM> clientFiles = new List<FileM>();
+                
+                /*Thread.Sleep(5000);*/
+                
             }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                throw;
+            }
+            
         }
     }
 }

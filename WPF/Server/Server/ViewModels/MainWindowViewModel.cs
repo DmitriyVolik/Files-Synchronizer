@@ -22,12 +22,18 @@ namespace Server.ViewModels
         public ObservableCollection<Group> Groups { get; set;}= new ObservableCollection<Group>();
         public Group SelectedGroup { get; set; }
 
+
+        private string _prevFilter="";
+        public string SearchFilter { get; set; }
+
         public User SelectedUser { get; set;}
 
         private Window _window;
 
         public MainWindowViewModel(Window window)
         {
+            SearchFilter = "";
+            
             _window = window;
 
             DBHelper.LoadAll(Users, Groups);
@@ -58,6 +64,17 @@ namespace Server.ViewModels
                 return new RelayCommand(
                     obj =>
                     {
+                        
+                        if (DBHelper.IsChanged(Users, _prevFilter))
+                        {
+                            var result=MessageBox.Show("У вас остались не сохранённые изменения, хотите сохранить?",
+                                "Предупреждение", MessageBoxButton.YesNo);
+                            if (result==MessageBoxResult.Yes)
+                            {
+                                DBHelper.SaveUsers(Users);
+                                DBHelper.SaveGroupsDeleted(Groups);
+                            }
+                        }
                         DBHelper.LoadAll(Users, Groups);
                     }
                 );
@@ -110,15 +127,23 @@ namespace Server.ViewModels
                 return new RelayCommand(
                     obj =>
                     {
+                        if (SearchFilter=="")
+                        {
+                            return;
+                        }
+                        if (DBHelper.IsChanged(Users, _prevFilter))
+                        {
+                            var result=MessageBox.Show("У вас остались не сохранённые изменения, хотите сохранить?",
+                                "Предупреждение", MessageBoxButton.YesNo);
+                            if (result==MessageBoxResult.Yes)
+                            {
+                                DBHelper.SaveUsers(Users);
+                                DBHelper.SaveGroupsDeleted(Groups);
+                            }
+                        }
                         
-                        if (DBHelper.IsChanged(Users))
-                        {
-                            MessageBox.Show("Change");
-                        }
-                        else
-                        {
-                            MessageBox.Show("NE change");
-                        }
+                        DBHelper.LoadAll(Users, Groups, SearchFilter);
+                        _prevFilter = SearchFilter;
                     }
                 );
             }
