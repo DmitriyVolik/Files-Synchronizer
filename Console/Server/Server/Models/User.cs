@@ -11,13 +11,14 @@ namespace Server.Models
         public int Id { get; set; }
         
         [MaxLength(16)]
-        [Required(AllowEmptyStrings = false)]
+        [MinLength(4)]
+        [Required]
         public string Login { get; set; }
         
         [MaxLength(100)]
-        [Required(AllowEmptyStrings = false)]
+        [Required]
+        [MinLength(4)]
         public string Password { get; set; }
-        
         public Group Group { get; set; }
 
     }

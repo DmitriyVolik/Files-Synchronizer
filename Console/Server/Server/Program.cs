@@ -87,7 +87,8 @@ namespace Server
                         {
                             if (filesGroup.FolderPath!="")
                             {
-                                ScanFiles.ProcessDirectory(filesGroup.FolderPath, temp);
+                                Console.WriteLine(filesGroup.FolderPath);
+                                ScanFiles.Start(filesGroup.FolderPath, temp);
                             }
 
                             var candidate = FilesGroups.FirstOrDefault(x => x.GroupId == filesGroup.Id);
@@ -107,9 +108,16 @@ namespace Server
                         }
                         
                     }
+
+                    foreach (var filesGroup in FilesGroups)
+                    {
+                        foreach (var file in filesGroup.files)
+                        {
+                            Console.WriteLine(file.Path);
+                        }
+                    }
                     
-                    
-                    Thread.Sleep(5000);
+                    Thread.Sleep(500000);
                 }
                 
                 
@@ -225,17 +233,19 @@ namespace Server
                 // more data.  
                 try
                 {
-                
                     content = state.sb.ToString();
-                    if (content=="GET:FILES:LIST:")//+ Токен подключения
+                    if (content.Contains("GET:FILES:LIST:"))
                     {
+
                         string token = content.Replace("GET:FILES:LIST:", "");
+                        
+                        Console.WriteLine(token);
 
-                        var groupId = DbHelper.GetGroupIdBySession(token);
+                        Group group = DbHelper.GetGroupBySession(token);
 
-                        if (groupId!= -1)
+                        if (group!= null)
                         {
-                            var filesGroup = FilesGroups.FirstOrDefault(x => x.GroupId == groupId)?.files;
+                            var filesGroup = FilesGroups.FirstOrDefault(x => x.GroupId == group.Id).files;
 
                             if (filesGroup!=null)
                             {
@@ -258,60 +268,57 @@ namespace Server
 
                         string token = temp.Replace(path+":", "");
 
-                        int groupId = DbHelper.GetGroupIdBySession(token);
+                        var groupDb = DbHelper.GetGroupBySession(token);
 
-                        /*using ()
-                        {
-                            
-                        }*/
+                        var group = FilesGroups.FirstOrDefault(x => x.GroupId == groupDb.Id);
                         
-                        Console.WriteLine(MainDirectory+path);
-                
-                        /*if (File.Exists(MainDirectory+path))
+                        if (group!=null)
                         {
-                            try
+                            var file = group.files.FirstOrDefault(x => x.Path == path);
+                            Console.WriteLine(path);
+
+                            if (file != null && File.Exists(groupDb.FolderPath+file.Path))
                             {
-                                StateObject fileSendState = new StateObject();
-                        
-                                long fileSize=Files.FirstOrDefault(x => x.Path == path).Size;
-                            
-                                if (fileSize<=maxSize)
+                                try
                                 {
-                                    String filePath = MainDirectory + path;
-                                    byte[] fileByteArray = File.ReadAllBytes(filePath);
-                                    state.SetGoal(fileByteArray.Length);
-                                    handler.BeginSend(
-                                        fileByteArray,
-                                        0,
-                                        fileByteArray.Length,
-                                        SocketFlags.None,
-                                        SendFileCallback,
-                                        new object[]
-                                        {
-                                            handler,
+                                    StateObject fileSendState = new StateObject();
+
+                                    if (file.Size<=maxSize)
+                                    {
+                                        String filePath = groupDb.FolderPath + file.Path;
+                                        byte[] fileByteArray = File.ReadAllBytes(filePath);
+                                        state.SetGoal(fileByteArray.Length);
+                                        handler.BeginSend(
                                             fileByteArray,
-                                            fileSendState,
-                                            fileSize,
-                                            maxSize
+                                            0,
+                                            fileByteArray.Length,
+                                            SocketFlags.None,
+                                            SendFileCallback,
+                                            new object[]
+                                            {
+                                                handler,
+                                                fileByteArray,
+                                                fileSendState,
+                                                file.Size,
+                                                maxSize
                                     
-                                        }
-                                    );
+                                            }
+                                        );
                             
+                                    }
+                                    Console.WriteLine("file send!!");
                                 }
-                                Console.WriteLine("file send!!");
+                                catch (Exception e)
+                                {
+                                    // ignored
+                                }
                             }
-                            catch (Exception e)
+                            else
                             {
-                                throw;
+                                Send(handler, "0");
                             }
+
                         }
-                        else
-                        {
-                            Send(handler, "0");
-                        }
-                        */
-                
-                
                     }
                     else if (content.Contains("ADD:USER:"))
                     {
@@ -362,7 +369,7 @@ namespace Server
                         {
                             var candidate = db.Users.FirstOrDefault(x => x.Login == tempUser.Login);
                     
-                            if (PasswordHash.ValidatePassword(tempUser.Password, candidate.Password))
+                            if (candidate!= null && PasswordHash.ValidatePassword(tempUser.Password, candidate.Password))
                             {
                                 var bytes = new byte[16];
                                 using (var rng = new RNGCryptoServiceProvider())
@@ -398,6 +405,24 @@ namespace Server
                                 db.SaveChanges();
                             }
                     
+                        }
+                    }
+                    else if (content.Contains("CHECK:SESSION:"))
+                    {
+                        string token = content.Replace("CHECK:SESSION:", "");
+
+                        using (var db=new Context())
+                        {
+                            Console.WriteLine("Check");
+                            if (db.Sessions.FirstOrDefault(x => x.Token == token) != null)
+                            {
+                                Send(handler, "SESSION:CORRECT");
+                            }
+                            else
+                            {
+                                Send(handler, "SESSION:INCORRECT");
+                            }
+                            
                         }
                     }
 
@@ -478,8 +503,7 @@ namespace Server
             }
             catch (Exception e)
             {
-                throw;
-                Console.WriteLine(e.ToString());  
+                //ignored
             }  
         }
     
@@ -529,8 +553,6 @@ namespace Server
         public static void Main(String[] args)
         {
             StartListening();
-            
-            
 
         }
     }

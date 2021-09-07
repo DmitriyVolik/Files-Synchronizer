@@ -6,10 +6,12 @@ namespace Server.Models
     {
         public int Id { get; set; }
         
-        [Required(AllowEmptyStrings = false)]
+        [Required]
         public string Token { get; set;}
 
-        [Required(AllowEmptyStrings = false)]
+        public int UserId { get; set;}
+
+        [Required]
         public User User { get; set; }
     }
 }

@@ -51,21 +51,13 @@ namespace Server.Helpers
                     var candidate = users.FirstOrDefault(x => x.Id == user.Id);
                     if (candidate == null)
                     {
-                        using (Context db2 = new Context())
-                        {
-                            db2.Sessions.RemoveRange(db2.Sessions.Where(x=>x.User==user));
-                            db2.SaveChanges();
-                        }
                         db.Users.Remove(user);
                     }
                     else
                     {
                         user.Group = candidate.Group;
                     }
-                    
-
                 }
-
                 db.SaveChanges();
             }
         }

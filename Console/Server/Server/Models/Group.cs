@@ -6,7 +6,7 @@ namespace Server.Models
     {
         public int Id { get; set; }
         
-        [Required(AllowEmptyStrings = false)]
+        [Required]
         [MaxLength(16)]
         public string Name { get; set; }
 

@@ -2,12 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
+using System.Threading;
 using Server.Models;
 
 namespace Server.Files
 {
     public static class ScanFiles
     {
+        private static string _cutDir;
+
+        public static void Start(string targetDirectory, List<FileM> list)
+        {
+            _cutDir = targetDirectory;
+
+            ProcessDirectory(targetDirectory, list);
+        }
         public static void ProcessDirectory(string targetDirectory, List<FileM> list)
         {
             // Process the list of files found in the directory.
@@ -15,7 +24,8 @@ namespace Server.Files
             foreach (string fileName in fileEntries)
             {
                 /*ProcessFile(fileName);*/
-                FileM file = new FileM(){Path = fileName.Replace(ConfigurationManager.AppSettings.Get("MainDirectory"), String.Empty) };
+                
+                FileM file = new FileM(){Path = fileName.Replace(_cutDir, String.Empty)};
                 var fileSize= new FileInfo(fileName).Length;
                 
                 if (fileSize>AsynchronousSocketListener.maxSize)

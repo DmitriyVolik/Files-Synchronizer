@@ -43,13 +43,29 @@ namespace Client.ViewModels
             if (File.Exists(@"UserData.json"))
             {
                 UserData = JsonWorker<UserData>.JsonToObj(File.ReadAllText(@"UserData.json"));
+                
+                string answer;
+
                 if (UserData.SessionToken!=null)
                 {
-                    var nextWindow = new MainWindow(UserData);
-                    nextWindow.Show();
-                    _window.Close();
+                    using (var client = TcpHelper.GetClient())
+                    {
+                        using (var stream = client.GetStream())
+                        {
+                            PacketSender.SendJsonString(stream, "CHECK:SESSION:"+Encryptor.EncodeDecrypt(UserData.SessionToken));
+
+                            answer = PacketRecipient.GetJsonData(stream);
+                        }
+                    }
+                    
+                    if (answer.Contains("SESSION:CORRECT"))
+                    {
+                        var nextWindow = new MainWindow(UserData);
+                        nextWindow.Show();
+                        _window.Close();
+                    }
                 }
-                
+
             }
             else
             {

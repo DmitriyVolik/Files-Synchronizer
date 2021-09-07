@@ -1,14 +1,15 @@
 ﻿using System.Linq;
 using Server.Database;
+using Server.Models;
 
 namespace Server.Helpers
 {
     public class DbHelper
     {
-        public static int GetGroupIdBySession(string sessionToken)
+        public static Group GetGroupBySession(string sessionToken)
         {
 
-            int id;
+            Group group;
             
             using (var db=new Context())
             {
@@ -16,7 +17,7 @@ namespace Server.Helpers
 
                 if (session==null)
                 {
-                    return -1;
+                    return null;
                 }
 
                 db.Entry(session).Reference("User").Load();
@@ -25,13 +26,13 @@ namespace Server.Helpers
 
                 if (session.User.Group==null)
                 {
-                    return -1;
+                    return null;
                 }
-                id = session.User.Group.Id;
+                group = session.User.Group;
 
             }
 
-            return id;
+            return group;
         }
     }
 }

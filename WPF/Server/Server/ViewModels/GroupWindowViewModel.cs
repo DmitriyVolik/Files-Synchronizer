@@ -115,11 +115,12 @@ namespace Server.ViewModels
                        
                         var dlg = new CommonOpenFileDialog();
                         dlg.IsFolderPicker = true;
-                        
+                        _window.Topmost = false;
                         if (dlg.ShowDialog() == CommonFileDialogResult.Ok) 
                         {
-                            FolderPath = dlg.FileName;
+                            FolderPath = dlg.FileName+"\\";
                         }
+                        _window.Topmost = true;
                     }
                 );
             }

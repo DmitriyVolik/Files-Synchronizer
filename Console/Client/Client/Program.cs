@@ -20,6 +20,8 @@ namespace Client
         {
             var mainDir = ConfigurationManager.AppSettings.Get("MainDirectory");
             
+            var userData = JsonWorker<UserData>.JsonToObj(File.ReadAllText(@"UserData.json"));
+
             try
             {
                 var serverFiles = new List<FileM>();
@@ -31,8 +33,7 @@ namespace Client
                     
                     using (var stream = client.GetStream())
                     {
-                        Console.WriteLine(client.SendBufferSize);
-                        PacketSender.SendJsonString(stream, "GET:FILES:LIST");
+                        PacketSender.SendJsonString(stream, "GET:FILES:LIST:"+Encryptor.EncodeDecrypt(userData.SessionToken));
 
                         data = PacketRecipient.GetJsonData(stream, client.SendBufferSize);
                         
@@ -42,9 +43,9 @@ namespace Client
                 Console.WriteLine(data);
                 Console.WriteLine("-----------------");
                 
-                serverFiles = JsonWorker.JsonToFiles(data);
+                serverFiles = JsonWorker<List<FileM>>.JsonToObj(data);
 
-                if (serverFiles.Count == 0)
+                /*if (serverFiles.Count == 0)
                 {
                     DirectoryInfo folder = new DirectoryInfo(mainDir);
 
@@ -75,7 +76,7 @@ namespace Client
                         /*if (!Directory.Exists(item.Path))
                         {
                             Directory.CreateDirectory(mainDir+Path.GetDirectoryName(item.Path));
-                        }*/
+                        }#1#
                         continue;
                     }
 
@@ -136,7 +137,7 @@ namespace Client
 
                 List <FileM> clientFiles = new List<FileM>();
                 
-                /*Thread.Sleep(5000);*/
+                /*Thread.Sleep(5000);#1#*/
                 
             }
             catch (Exception e)
