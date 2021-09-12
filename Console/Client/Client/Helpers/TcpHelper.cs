@@ -1,4 +1,6 @@
+using System;
 using System.Net.Sockets;
+using Microsoft.Extensions.Configuration;
 
 namespace Client.Helpers
 {
@@ -6,8 +8,11 @@ namespace Client.Helpers
     {
         public static TcpClient GetClient()
         {
-            return new TcpClient("46.160.119.181", 5432);
-            //return new TcpClient("127.0.0.1", 1024);
+            var builder= new ConfigurationBuilder().AddJsonFile("appsettings.json", true, true);
+            var config = builder.Build();
+            
+            
+            return new TcpClient(config["ServerIp"], 5432);
         }
     }
 }

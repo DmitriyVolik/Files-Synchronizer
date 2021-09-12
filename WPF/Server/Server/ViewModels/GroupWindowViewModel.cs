@@ -58,7 +58,6 @@ namespace Server.ViewModels
             _window.Closing += new CancelEventHandler(Window_Closing);
         }
 
-        
         public RelayCommand SaveBtn
         {
             get

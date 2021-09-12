@@ -1,11 +1,16 @@
+using System;
+using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using Chat.Packets;
 using Client.Helpers;
 using Client.Models;
 using Client.Packets;
 using Client.Workers;
+using Microsoft.Win32.TaskScheduler;
 using Microsoft.WindowsAPICodePack.Dialogs;
 
 namespace Client.ViewModels
@@ -16,11 +21,14 @@ namespace Client.ViewModels
         private Window _window;
 
         private UserData UserData;
-        
+
+        public int TimeDelay { get; set; }
+
         public MainWindowViewModel(UserData userData, Window window)
         {
             _window = window;
             UserData = userData;
+            TimeDelay = 1;
             if (UserData.FolderPath==null)
             {
                 UserData.FolderPath = "Не выбрана";
@@ -29,7 +37,7 @@ namespace Client.ViewModels
         
         public string FolderPath
         {
-            get { return UserData.FolderPath; }
+            get { return UserData.FolderPath.Remove(UserData.FolderPath.Length-1);}
             set
             {
                 UserData.FolderPath = value;
@@ -79,7 +87,7 @@ namespace Client.ViewModels
                         
                         if (dlg.ShowDialog() == CommonFileDialogResult.Ok) 
                         {
-                            FolderPath = dlg.FileName;
+                            FolderPath = dlg.FileName+"\\";
                             File.WriteAllText(@"UserData.json", JsonWorker<UserData>.ObjToJson(UserData));
                         }
 
@@ -87,5 +95,92 @@ namespace Client.ViewModels
                 );
             }
         }
+        
+        public RelayCommand SyncFiles
+        {
+            get
+            {
+                return new RelayCommand(
+                    obj =>
+                    {
+                        try
+                        {
+                            var currentDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+                            var process = new Process();
+                            process.StartInfo.FileName = currentDir+@"\Sync\Client.exe";
+                            process.Start();
+                        }
+                        catch (Exception e)
+                        {
+                            MessageBox.Show(e.Message, "Ошибка");
+                        }
+                        
+                    }
+                );
+            }
+        }
+        
+        public RelayCommand CreateTask
+        {
+            get
+            {
+                return new RelayCommand(
+                    obj =>
+                    {
+
+                        if (TimeDelay<1 || TimeDelay>24)
+                        {
+                            MessageBox.Show("Задержка не может быть менее чем 1 и более чем 24 часа!", "Ошибка");
+                        }
+                        
+                        
+                        using (TaskService ts = new TaskService())
+                        {
+                            TaskDefinition td = ts.NewTask();
+                            td.RegistrationInfo.Description = "Синхронизация файлов с сервером";
+
+                            var dt = new DailyTrigger();
+                            dt.StartBoundary = DateTime.Now;
+                            dt.Repetition = new RepetitionPattern(TimeSpan.FromHours(24), TimeSpan.FromDays(1));
+                            td.Triggers.Add(dt);
+                            
+                            var currentDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+                            td.Actions.Add(new ExecAction(currentDir+@"Sync\Client.exe", null, null));
+                            
+                            ts.RootFolder.RegisterTaskDefinition(@"FilesSynchronizer", td);
+                        }
+                    }
+                );
+            }
+        }
+        
+        public RelayCommand DelTask
+        {
+            get
+            {
+                return new RelayCommand(
+                    obj =>
+                    {
+                        using (TaskService ts = new TaskService())
+                        {
+                            try
+                            {
+                                ts.RootFolder.DeleteTask("FilesSynchronizer");
+                            }
+                            catch (Exception e)
+                            {
+                                MessageBox.Show("Вы еще не добавляли задачу!", "Ошибка");
+                                return;
+                            }
+
+                            MessageBox.Show("Задача удалена!");
+                        }
+                    }
+                );
+            }
+        }
+        
     }
 }

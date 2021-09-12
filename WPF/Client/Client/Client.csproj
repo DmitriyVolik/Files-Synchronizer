@@ -8,8 +8,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="Extended.Wpf.Toolkit" Version="4.1.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="5.0.0" />
+      <PackageReference Include="TaskScheduler" Version="2.9.1" />
       <PackageReference Include="WindowsAPICodePack" Version="1.1.2" />
     </ItemGroup>
 

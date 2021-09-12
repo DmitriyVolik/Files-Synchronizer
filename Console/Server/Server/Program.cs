@@ -128,8 +128,6 @@ namespace Server
         {
             await Task.Run(RefreshFiles);
         }
-
-        public static string MainDirectory= ConfigurationManager.AppSettings.Get("MainDirectory");
         public static void StartListening()
         {
             // Establish the local endpoint for the socket.  
@@ -137,7 +135,11 @@ namespace Server
             // running the listener is "host.contoso.com".  
             IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());  
             // IPAddress ipAddress = IPAddress.Parse("192.168.0.109");
-            IPAddress ipAddress = IPAddress.Parse("192.168.0.109");
+            
+            var builder= new ConfigurationBuilder().AddJsonFile("appsettings.json", true, true);
+            var config = builder.Build();
+
+            IPAddress ipAddress = IPAddress.Parse(config["LocalIp"]);
             IPEndPoint localEndPoint = new IPEndPoint(ipAddress, 1024);
 
             // Create a TCP/IP socket.  
@@ -261,12 +263,15 @@ namespace Server
                     } 
                     else if (content.Contains("GET:FILE:"))
                     {
-                        
+                        //GET:FILE:TOKEN:NAME
                         string temp = content.Replace("GET:FILE:", "");
                         
                         string path=temp.Substring(0, temp.IndexOf(':'));
 
                         string token = temp.Replace(path+":", "");
+                        
+                        Console.WriteLine(path);
+                        Console.WriteLine(token);
 
                         var groupDb = DbHelper.GetGroupBySession(token);
 

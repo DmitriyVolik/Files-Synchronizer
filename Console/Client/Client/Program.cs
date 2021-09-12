@@ -1,151 +1,115 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Sockets;
-using System.Threading;
+using System.Reflection;
 using Chat.Packets;
 using Client.Files;
 using Client.Helpers;
 using Client.Models;
 using Client.Workers;
+using Server.Files;
 
 namespace Client
 {
     internal class Program
     {
-
         public static void Main(string[] args)
         {
-            var mainDir = ConfigurationManager.AppSettings.Get("MainDirectory");
-            
-            var userData = JsonWorker<UserData>.JsonToObj(File.ReadAllText(@"UserData.json"));
+            var currentPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
-            try
+            var userData = JsonWorker<UserData>.JsonToObj(File.ReadAllText(currentPath + @"\" + "UserData.json"));
+
+            var mainDir = userData.FolderPath;
+
+            var serverFiles = new List<FileM>();
+
+            string data;
+
+            using (var client = TcpHelper.GetClient())
             {
-                var serverFiles = new List<FileM>();
-
-                string data;
-
-                using (var client = TcpHelper.GetClient())
+                using (var stream = client.GetStream())
                 {
-                    
-                    using (var stream = client.GetStream())
-                    {
-                        PacketSender.SendJsonString(stream, "GET:FILES:LIST:"+Encryptor.EncodeDecrypt(userData.SessionToken));
+                    PacketSender.SendJsonString(stream,
+                        "GET:FILES:LIST:" + Encryptor.EncodeDecrypt(userData.SessionToken));
 
-                        data = PacketRecipient.GetJsonData(stream, client.SendBufferSize);
-                        
-                    }
+                    data = PacketRecipient.GetJsonData(stream, client.SendBufferSize);
                 }
-                
-                Console.WriteLine(data);
-                Console.WriteLine("-----------------");
-                
-                serverFiles = JsonWorker<List<FileM>>.JsonToObj(data);
+            }
 
-                /*if (serverFiles.Count == 0)
+            serverFiles = JsonWorker<List<FileM>>.JsonToObj(data);
+
+            if (serverFiles.Count == 0)
+            {
+                var folder = new DirectoryInfo(mainDir);
+
+                foreach (var file in folder.GetFiles()) file.Delete();
+
+                foreach (var dir in folder.GetDirectories()) dir.Delete(true);
+            }
+
+
+            var files = new List<FileM>();
+
+            ScanFiles.Start(mainDir, files);
+
+            long totalSize = 0;
+
+            foreach (var item in serverFiles)
+            {
+                totalSize += item.Size;
+
+                if (item.Size == 0)
                 {
-                    DirectoryInfo folder = new DirectoryInfo(mainDir);
-
-                    foreach (FileInfo file in folder.GetFiles())
-                    {
-                        file.Delete();
-                    }
-
-                    foreach (DirectoryInfo dir in folder.GetDirectories())
-                    {
-                        dir.Delete(true);
-                    }
+                    if (!Directory.Exists(item.Path))
+                        Directory.CreateDirectory(mainDir + Path.GetDirectoryName(item.Path));
+                    File.Create(mainDir + item.Path);
+                    continue;
                 }
 
+                var selectedItem = files.FirstOrDefault(x => x.Path == item.Path);
 
-                var files = new List<FileM>();
-
-                ScanFiles.ProcessDirectory(mainDir, files);
-
-                long totalSize = 0;
-                
-                foreach (var item in serverFiles)
+                if (selectedItem == null)
                 {
-                    totalSize += item.Size;
+                    PacketFile.GetFile(item.Path, serverFiles, Encryptor.EncodeDecrypt(userData.SessionToken), mainDir);
+                    continue;
+                }
 
-                    if (item.Size == 0)
+                if (item.Size != selectedItem.Size)
+                {
+                    File.Delete(mainDir + selectedItem.Path);
+                    PacketFile.GetFile(item.Path, serverFiles, Encryptor.EncodeDecrypt(userData.SessionToken), mainDir);
+                }
+                else
+                {
+                    string hash;
+
+                    try
                     {
-                        /*if (!Directory.Exists(item.Path))
-                        {
-                            Directory.CreateDirectory(mainDir+Path.GetDirectoryName(item.Path));
-                        }#1#
+                        hash = CreateFileHash.CreateMD5(mainDir + selectedItem.Path);
+                    }
+                    catch (IOException)
+                    {
                         continue;
                     }
 
-                    FileM selectedItem = files.FirstOrDefault(x => x.Path == item.Path);
-
-                    if (selectedItem == null)
-                    {
-                        PacketFile.GetFile(item.Path, serverFiles);
-                        continue;
-                    }
-                    else
-                    {
-                        Console.WriteLine(selectedItem.Path);
-                    }
-
-                    if (item.Size != selectedItem.Size)
+                    if (hash != item.Hash)
                     {
                         File.Delete(mainDir + selectedItem.Path);
-                        PacketFile.GetFile(item.Path,serverFiles);
+                        PacketFile.GetFile(item.Path, serverFiles, Encryptor.EncodeDecrypt(userData.SessionToken),
+                            mainDir);
                     }
-                    else
-                    {
-                        string hash;
-
-                        try
-                        {
-                            hash = CreateFileHash.CreateMD5(mainDir + selectedItem.Path);
-                        }
-                        catch (IOException)
-                        {
-                            continue;
-                        }
-
-                        if (hash != item.Hash)
-                        {
-                            File.Delete(mainDir + selectedItem.Path);
-                            PacketFile.GetFile(item.Path,serverFiles );
-                        }
-                    }
-
-                    
                 }
-                foreach (var i in files)
-                {
-                    if (!serverFiles.Exists(x => x.Path == i.Path))
-                    {
-                        File.Delete(mainDir + i.Path);
-                        continue;
-                    }
-                    
-                }
-
-                Dirs.ClearEmptyDirs(mainDir);
-
-                Console.WriteLine("---------------------------");
-                
-                long totalSizeClient=0;
-
-                List <FileM> clientFiles = new List<FileM>();
-                
-                /*Thread.Sleep(5000);#1#*/
-                
             }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                throw;
-            }
-            
+
+            foreach (var i in files)
+                if (!serverFiles.Exists(x => x.Path == i.Path))
+                    File.Delete(mainDir + i.Path);
+
+            Dirs.ClearEmptyDirs(mainDir);
+
+            long totalSizeClient = 0;
+
+            var clientFiles = new List<FileM>();
         }
     }
 }
