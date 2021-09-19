@@ -77,9 +77,18 @@ namespace Server
         {
             while (true)
             {
+                
                 using (Context db = new Context())
                 {
 
+                    foreach (var filesGroup in FilesGroups)
+                    {
+                        if (db.Groups.FirstOrDefault(x=> x.Id==filesGroup.GroupId)==null)
+                        {
+                            FilesGroups.Remove(filesGroup);
+                        }
+                    }
+                    
                     foreach (var filesGroup in db.Groups)
                     {
                         var temp = new List<FileM>();
@@ -104,8 +113,9 @@ namespace Server
                         }
                         catch (System.IO.IOException)
                         {
-                
+                            //ignored
                         }
+                        
                         
                     }
                     Thread.Sleep(60000);

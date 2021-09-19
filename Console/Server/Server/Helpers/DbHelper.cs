@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Server.Database;
 using Server.Models;
 
@@ -8,7 +9,6 @@ namespace Server.Helpers
     {
         public static Group GetGroupBySession(string sessionToken)
         {
-
             Group group;
             
             using (var db=new Context())
@@ -34,5 +34,6 @@ namespace Server.Helpers
 
             return group;
         }
+        
     }
 }
