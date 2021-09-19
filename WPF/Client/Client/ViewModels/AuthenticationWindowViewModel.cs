@@ -40,9 +40,9 @@ namespace Client.ViewModels
                 Application.Current.Shutdown();
             }
 
-            if (File.Exists(@"UserData.json"))
+            if (File.Exists(@"Sync\UserData.json"))
             {
-                UserData = JsonWorker<UserData>.JsonToObj(File.ReadAllText(@"UserData.json"));
+                UserData = JsonWorker<UserData>.JsonToObj(File.ReadAllText(@"Sync\UserData.json"));
                 
                 string answer;
 
@@ -110,7 +110,7 @@ namespace Client.ViewModels
 
                                 UserData.SessionToken = token;
 
-                                File.WriteAllText(@"UserData.json", JsonWorker<UserData>.ObjToJson(UserData));
+                                File.WriteAllText(@"Sync\UserData.json", JsonWorker<UserData>.ObjToJson(UserData));
 
                                 var nextWindow = new MainWindow(UserData);
                                 nextWindow.Show();
@@ -164,7 +164,7 @@ namespace Client.ViewModels
                                 
                                 UserData.SessionToken = token;
 
-                                File.WriteAllText(@"UserData.json", JsonWorker<UserData>.ObjToJson(UserData));
+                                File.WriteAllText(@"Sync\UserData.json", JsonWorker<UserData>.ObjToJson(UserData));
                                 
                                 var nextWindow = new MainWindow(UserData);
                                 nextWindow.Show();

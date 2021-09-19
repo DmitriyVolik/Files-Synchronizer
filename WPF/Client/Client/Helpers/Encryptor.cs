@@ -14,27 +14,23 @@ namespace Client.Helpers
 
         static Encryptor()
         {
-            var builder= new ConfigurationBuilder().AddJsonFile("appsettings.json", true, true);
+            var builder = new ConfigurationBuilder().AddJsonFile("appsettings.json", true, true);
             var config = builder.Build();
             secretKey = Convert.ToUInt16(config["SecretKey"]);
         }
-        
+
         public static string EncodeDecrypt(string str)
         {
-            var ch = str.ToArray(); 
-            string newStr = "";      
-            foreach (var c in ch)  
-                newStr += TopSecret(c);  
+            var ch = str.ToArray();
+            string newStr = "";
+            foreach (var c in ch) newStr += TopSecret(c);
             return newStr;
         }
- 
+
         public static char TopSecret(char character)
         {
             character = (char)(character ^ secretKey);
             return character;
         }
-        
-
-        
     }
 }

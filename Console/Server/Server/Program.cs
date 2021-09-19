@@ -108,16 +108,7 @@ namespace Server
                         }
                         
                     }
-
-                    foreach (var filesGroup in FilesGroups)
-                    {
-                        foreach (var file in filesGroup.files)
-                        {
-                            Console.WriteLine(file.Path);
-                        }
-                    }
-                    
-                    Thread.Sleep(500000);
+                    Thread.Sleep(60000);
                 }
                 
                 
@@ -132,10 +123,8 @@ namespace Server
         {
             // Establish the local endpoint for the socket.  
             // The DNS name of the computer  
-            // running the listener is "host.contoso.com".  
-            IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());  
-            // IPAddress ipAddress = IPAddress.Parse("192.168.0.109");
-            
+            IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
+
             var builder= new ConfigurationBuilder().AddJsonFile("appsettings.json", true, true);
             var config = builder.Build();
 
@@ -218,13 +207,6 @@ namespace Server
             {
                 return;
             }
-        
-            // !!! проверить: в накопительном стринг билдере - столько байтов, сколько
-            // было сообщено сервером в ответ на разведывательный запрос;
-            // - если меньше - запустить очередное получение:
-            // 1. если накопитель пообще пуст - со смещением 0;
-            // 2. если в накопителе уже Х байт, то со смещением Х;
-            // - если равно - выйти из цикла запуска получений
 
             if (bytesRead > 0) {  
                 // There  might be more data, so store the data received so far.  
@@ -263,7 +245,6 @@ namespace Server
                     } 
                     else if (content.Contains("GET:FILE:"))
                     {
-                        //GET:FILE:TOKEN:NAME
                         string temp = content.Replace("GET:FILE:", "");
                         
                         string path=temp.Substring(0, temp.IndexOf(':'));
@@ -441,15 +422,6 @@ namespace Server
                 {
                     // ignored
                 }
-
-                /*if (content.IndexOf("<EOF>") > -1) {  
-                // All the data has been read from the
-                // client. Display it on the console.  
-                Console.WriteLine("Read {0} bytes from socket. \n Data : {1}",  
-                    content.Length, content );  
-                // Echo the data back to the client.  
-                Send(handler, content);  
-            } */
             }  
         }
 
@@ -472,9 +444,7 @@ namespace Server
                     fileSendState
                 });  
         }
-    
-        // .BeginSend(bytes, 0, bytes.Length, SocketFlags.None, endSendCallback, clientSocket);
-    
+
         private static void SendCallback(IAsyncResult ar)
         {
             try
@@ -491,9 +461,6 @@ namespace Server
             
                 if (total > 0)
                 {
-                    // !!! Заменить BeginSendFile на BeginSend, чтобы можно было передавать байты
-                    // файла по частям
-                    // handler.BeginSendFile(MainDirectory+path,new AsyncCallback(SendFileCallback), handler);
                     handler.BeginSend(jsonByteArray, (int)total, jsonByteArray.Length - (int)total,
                         SocketFlags.None, new AsyncCallback(SendCallback), handler);
                     return;
