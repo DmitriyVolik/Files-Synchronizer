@@ -96,7 +96,7 @@ namespace Server.ViewModels
 
                             }
                             
-                            DBHelper.LoadAll(_mainWindow.Users, _mainWindow.Groups);
+                            DBHelper.LoadAll(_mainWindow.Users, _mainWindow.Groups, _mainWindow.OldUsers);
                         }
                         _window.Close();
                     }

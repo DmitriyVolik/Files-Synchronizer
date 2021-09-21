@@ -6,7 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Server.Models
 {
-    public class User
+    public class User:ICloneable
     {
         public int Id { get; set; }
         
@@ -20,6 +20,12 @@ namespace Server.Models
         [MinLength(4)]
         public string Password { get; set; }
         public Group Group { get; set; }
+        
+        public object Clone()
+        {
+            return new User { Id=this.Id, Group = this.Group, 
+                Login = this.Login, Password = this.Password};
+        }
 
     }
 }

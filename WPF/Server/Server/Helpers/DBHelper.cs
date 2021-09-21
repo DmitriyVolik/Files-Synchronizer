@@ -14,10 +14,11 @@ namespace Server.Helpers
     {
         
        
-        public static void LoadAll(ObservableCollection<User> users, ObservableCollection<Group>groups, string filter="")
+        public static void LoadAll(ObservableCollection<User> users, ObservableCollection<Group>groups, List<User> oldUsers, string filter="")
         {
             users.Clear();
             groups.Clear();
+            oldUsers.Clear();
             
             using (Context db = new Context())
             {
@@ -31,13 +32,15 @@ namespace Server.Helpers
                 {
                     tempUsers = db.Users.Include(x => x.Group).ToList();
                 }
-                    
-
-                
                 var tempGroups = db.Groups.ToList();
+
+                foreach (var user in tempUsers)
+                {
+                    oldUsers.Add((User)user.Clone());
+                } 
                 
-                ObservableHelper<Group>.ObjectsToObs(tempGroups, groups);
-                ObservableHelper<User>.ObjectsToObs(tempUsers,users);
+                ObservableHelper<Group>.ListToObs(tempGroups, groups);
+                ObservableHelper<User>.ListToObs(tempUsers,users);
             }
         }
 
@@ -46,6 +49,7 @@ namespace Server.Helpers
         {
             using (Context db = new Context())
             {
+                
                 foreach (var user in db.Users)
                 {
                     var candidate = users.FirstOrDefault(x => x.Id == user.Id);
@@ -56,6 +60,7 @@ namespace Server.Helpers
                     else
                     {
                         user.Group = candidate.Group;
+                        db.ChangeTracker.DetectChanges();
                     }
                 }
                 db.SaveChanges();
@@ -71,6 +76,7 @@ namespace Server.Helpers
                     var candidate = groups.FirstOrDefault(x => x.Id == group.Id);
                     if (candidate == null)
                     {
+                        
                         using (Context db2 = new Context())
                         {
                             var tempUsers = db2.Users.Include(x=>x.Group).Where(x => x.Group.Id == group.Id);
@@ -92,51 +98,47 @@ namespace Server.Helpers
         }
 
 
-        public static bool IsChanged(ObservableCollection<User> users, string filter="")
+        public static bool IsChanged(ObservableCollection<User> users, List<User> oldUsers, string filter="")
         {
-            using (Context db = new Context())
-            {
 
-                List<User> dbUsers;
-                
-                if (filter!="")
-                {
-                    dbUsers = db.Users.Where(x=>x.Login.ToLower().Substring(0,filter.Length)==filter.ToLower()).Include(x => x.Group).ToList();
-                }
-                else
-                {
-                    dbUsers = db.Users.Include(x => x.Group).ToList();
-                }
-                
-                foreach (var user in dbUsers)
-                {
-                    var candidate = users.FirstOrDefault(x => x.Id == user.Id);
-                    if (candidate == null) 
-                    {
-                        return true;
-                    }
-                    
-                    if (user.Group==null && candidate.Group==null)
-                    {
-                        continue;
-                    }
-                    try
-                    {
-                        if (candidate.Group.Id!=user.Group.Id)
-                        {
-                            return true;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-
+            List<User> tempOldUsers;
             
+            if (filter!="")
+            {
+                tempOldUsers = oldUsers.Where(x=>x.Login.ToLower().Substring(0,filter.Length)==filter.ToLower()).ToList();
+            }
+            else
+            {
+                tempOldUsers = oldUsers;
+            }
+            
+            foreach (var user in tempOldUsers)
+            {
+                var candidate = users.FirstOrDefault(x => x.Id == user.Id);
+                if (candidate == null) 
+                {
+                    return true;
+                }
+                
+                if (user.Group==null && candidate.Group==null)
+                {
+                    continue;
+                }
+                try
+                {
+                    if (candidate.Group.Id!=user.Group.Id)
+                    {
+                        return true;
+                    }
+                }
+                catch (Exception e)
+                {
+                    return true;
+                }
+            }
+            return false;
+
+
         }
         
         

@@ -19,6 +19,8 @@ namespace Server.ViewModels
     public class MainWindowViewModel:BaseViewModel
     {
         public ObservableCollection<User> Users { get; set; } = new ObservableCollection<User>();
+
+        public List<User> OldUsers; 
         public ObservableCollection<Group> Groups { get; set;}= new ObservableCollection<Group>();
         public Group SelectedGroup { get; set; }
 
@@ -36,7 +38,9 @@ namespace Server.ViewModels
             
             _window = window;
 
-            DBHelper.LoadAll(Users, Groups);
+            OldUsers = new List<User>();
+
+            DBHelper.LoadAll(Users, Groups, OldUsers);
         }
 
         public RelayCommand SaveBtn
@@ -64,8 +68,8 @@ namespace Server.ViewModels
                 return new RelayCommand(
                     obj =>
                     {
-                        
-                        if (DBHelper.IsChanged(Users, _prevFilter))
+
+                        if (DBHelper.IsChanged(Users, OldUsers,  _prevFilter))
                         {
                             var result=MessageBox.Show("У вас остались не сохранённые изменения, хотите сохранить?",
                                 "Предупреждение", MessageBoxButton.YesNo);
@@ -75,7 +79,7 @@ namespace Server.ViewModels
                                 DBHelper.SaveGroupsDeleted(Groups);
                             }
                         }
-                        DBHelper.LoadAll(Users, Groups);
+                        DBHelper.LoadAll(Users, Groups, OldUsers);
                     }
                 );
             }
@@ -131,7 +135,7 @@ namespace Server.ViewModels
                         {
                             return;
                         }
-                        if (DBHelper.IsChanged(Users, _prevFilter))
+                        if (DBHelper.IsChanged(Users,OldUsers ,_prevFilter))
                         {
                             var result=MessageBox.Show("У вас остались не сохранённые изменения, хотите сохранить?",
                                 "Предупреждение", MessageBoxButton.YesNo);
@@ -142,7 +146,7 @@ namespace Server.ViewModels
                             }
                         }
                         
-                        DBHelper.LoadAll(Users, Groups, SearchFilter);
+                        DBHelper.LoadAll(Users, Groups, OldUsers,SearchFilter);
                         _prevFilter = SearchFilter;
                     }
                 );

@@ -9,7 +9,7 @@ namespace Server.Helpers
 {
     public class ObservableHelper<T>
     {
-        public static void ObjectsToObs(List<T> objects, ObservableCollection<T> obs)
+        public static void ListToObs(List<T> objects, ObservableCollection<T> obs)
         {
             foreach (var obj in objects)
             {
