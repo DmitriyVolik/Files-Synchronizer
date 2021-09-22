@@ -12,8 +12,6 @@ namespace Server.Helpers
 {
     public static class DBHelper
     {
-        
-       
         public static void LoadAll(ObservableCollection<User> users, ObservableCollection<Group>groups, List<User> oldUsers, string filter="")
         {
             users.Clear();
@@ -100,7 +98,6 @@ namespace Server.Helpers
 
         public static bool IsChanged(ObservableCollection<User> users, List<User> oldUsers, string filter="")
         {
-
             List<User> tempOldUsers;
             
             if (filter!="")
@@ -137,12 +134,7 @@ namespace Server.Helpers
                 }
             }
             return false;
-
-
         }
-        
-        
-
     }
     public static class StringExtensions
     {

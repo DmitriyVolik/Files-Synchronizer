@@ -80,15 +80,16 @@ namespace Server
                 
                 using (Context db = new Context())
                 {
-
-                    foreach (var filesGroup in FilesGroups)
+                    int currentCount = FilesGroups.Count;
+                    for (int i = 0; i < currentCount; i++)
                     {
-                        if (db.Groups.FirstOrDefault(x=> x.Id==filesGroup.GroupId)==null)
+                        if (db.Groups.FirstOrDefault(x=> x.Id==FilesGroups[i].GroupId)==null)
                         {
-                            FilesGroups.Remove(filesGroup);
+                            FilesGroups.Remove(FilesGroups[i]);
+                            currentCount = FilesGroups.Count;
                         }
                     }
-                    
+
                     foreach (var filesGroup in db.Groups)
                     {
                         var temp = new List<FileM>();
@@ -96,7 +97,6 @@ namespace Server
                         {
                             if (filesGroup.FolderPath!="")
                             {
-                                Console.WriteLine(filesGroup.FolderPath);
                                 ScanFiles.Start(filesGroup.FolderPath, temp);
                             }
 
@@ -110,15 +110,16 @@ namespace Server
                             {
                                 candidate.files = temp;
                             }
+
                         }
-                        catch (System.IO.IOException)
+                        catch (Exception e)
                         {
-                            //ignored
+                            Console.WriteLine(e.Message);
                         }
                         
                         
                     }
-                    Thread.Sleep(60000);
+                    Thread.Sleep(3000);
                 }
                 
                 
@@ -232,8 +233,6 @@ namespace Server
                     {
 
                         string token = content.Replace("GET:FILES:LIST:", "");
-                        
-                        Console.WriteLine(token);
 
                         Group group = DbHelper.GetGroupBySession(token);
 
@@ -243,10 +242,6 @@ namespace Server
 
                             if (filesGroup!=null)
                             {
-                                Console.WriteLine(JsonWorker<List<FileM>>.ObjToJson(filesGroup));
-                                Console.WriteLine("-----------------------------------------------------");
-                                Console.WriteLine(JsonWorker<List<FileM>>.ObjToJson(filesGroup).Length);
-                                Console.WriteLine("-----------------------------------------------------");
                                 Send(handler, JsonWorker<List<FileM>>.ObjToJson(filesGroup));
                             }
                             
@@ -260,9 +255,6 @@ namespace Server
                         string path=temp.Substring(0, temp.IndexOf(':'));
 
                         string token = temp.Replace(path+":", "");
-                        
-                        Console.WriteLine(path);
-                        Console.WriteLine(token);
 
                         var groupDb = DbHelper.GetGroupBySession(token);
 
@@ -271,7 +263,6 @@ namespace Server
                         if (group!=null)
                         {
                             var file = group.files.FirstOrDefault(x => x.Path == path);
-                            Console.WriteLine(path);
 
                             if (file != null && File.Exists(groupDb.FolderPath+file.Path))
                             {
@@ -302,10 +293,10 @@ namespace Server
                                         );
                             
                                     }
-                                    Console.WriteLine("file send!!");
                                 }
                                 catch (Exception e)
                                 {
+                                    Console.WriteLine(e.Message);
                                     // ignored
                                 }
                             }
@@ -344,7 +335,6 @@ namespace Server
                                 }
                         
                                 string token = BitConverter.ToString(bytes).Replace("-", "").ToLower();
-                                Console.WriteLine(token);
 
                                 db.Sessions.Add(new Session() {Token = token, User = user});
                         
@@ -409,7 +399,6 @@ namespace Server
 
                         using (var db=new Context())
                         {
-                            Console.WriteLine("Check");
                             if (db.Sessions.FirstOrDefault(x => x.Token == token) != null)
                             {
                                 Send(handler, "SESSION:CORRECT");
@@ -516,8 +505,7 @@ namespace Server
                         SocketFlags.None, new AsyncCallback(SendFileCallback), handler);
                     return;
                 }
-            
-                Console.WriteLine("Sent File done");
+                
                 if (fileSize<maxSize)
                 {
                     handler.Shutdown(SocketShutdown.Both);  
@@ -534,6 +522,9 @@ namespace Server
         
         public static void Main(String[] args)
         {
+            
+            Console.WriteLine(System.Security.Principal.WindowsIdentity.GetCurrent().Name);
+            
             StartListening();
 
         }

@@ -20,13 +20,18 @@ namespace Server.Files
         public static void ProcessDirectory(string targetDirectory, List<FileM> list)
         {
             // Process the list of files found in the directory.
+
             string [] fileEntries = Directory.GetFiles(targetDirectory);
             foreach (string fileName in fileEntries)
             {
                 /*ProcessFile(fileName);*/
-                
+
                 FileM file = new FileM(){Path = fileName.Replace(_cutDir, String.Empty)};
-                var fileSize= new FileInfo(fileName).Length;
+
+                long fileSize;
+
+
+                fileSize= new FileInfo(fileName).Length;
                 
                 if (fileSize>AsynchronousSocketListener.maxSize)
                 {
@@ -35,12 +40,21 @@ namespace Server.Files
                 file.Size = fileSize;
                 file.Hash = CreateFileHash.CreateMD5(fileName);
                 list.Add(file);
+
             }
 
             // Recurse into subdirectories of this directory.
-            string [] subdirectoryEntries = Directory.GetDirectories(targetDirectory);
+
+            string[] subdirectoryEntries=subdirectoryEntries = Directory.GetDirectories(targetDirectory);
             foreach(string subdirectory in subdirectoryEntries)
-                ProcessDirectory(subdirectory, list);
+                try
+                {
+                    ProcessDirectory(subdirectory, list);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
         }
 
         // Insert logic for processing found files here.

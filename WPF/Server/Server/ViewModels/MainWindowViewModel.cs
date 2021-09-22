@@ -39,6 +39,8 @@ namespace Server.ViewModels
             _window = window;
 
             OldUsers = new List<User>();
+            
+            _window.Closing += new CancelEventHandler(Window_Closing);
 
             DBHelper.LoadAll(Users, Groups, OldUsers);
         }
@@ -52,6 +54,13 @@ namespace Server.ViewModels
                     {
                         DBHelper.SaveUsers(Users);
                         DBHelper.SaveGroupsDeleted(Groups);
+                        
+                        OldUsers.Clear();
+
+                        foreach (var user in Users)
+                        {
+                            OldUsers.Add((User)user.Clone());
+                        }
 
                         MessageBox.Show("Изменения сохранены!");
                     }
@@ -68,7 +77,7 @@ namespace Server.ViewModels
                 return new RelayCommand(
                     obj =>
                     {
-
+                        
                         if (DBHelper.IsChanged(Users, OldUsers,  _prevFilter))
                         {
                             var result=MessageBox.Show("У вас остались не сохранённые изменения, хотите сохранить?",
@@ -79,6 +88,9 @@ namespace Server.ViewModels
                                 DBHelper.SaveGroupsDeleted(Groups);
                             }
                         }
+                        SearchFilter = "";
+                        OnPropertyChanged("SearchFilter");
+                        _prevFilter = "";
                         DBHelper.LoadAll(Users, Groups, OldUsers);
                     }
                 );
@@ -151,6 +163,22 @@ namespace Server.ViewModels
                     }
                 );
             }
+        }
+        
+        
+        void Window_Closing(object sender, CancelEventArgs e)
+        {
+            if (DBHelper.IsChanged(Users, OldUsers,  _prevFilter))
+            {
+                var result=MessageBox.Show("У вас остались не сохранённые изменения, хотите сохранить?",
+                    "Предупреждение", MessageBoxButton.YesNo);
+                if (result==MessageBoxResult.Yes)
+                {
+                    DBHelper.SaveUsers(Users);
+                    DBHelper.SaveGroupsDeleted(Groups);
+                }
+            }
+
         }
         
         
