@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using Chat.Packets;
 using Client.Files;
 using Client.Helpers;
@@ -25,6 +27,23 @@ namespace Client
 
             string data;
 
+            int fileListLenght;
+
+            using (var client = TcpHelper.GetClient())
+            {
+                using (var stream = client.GetStream())
+                {
+                    PacketSender.SendJsonString(stream,
+                        "GET:FILES:LIST:LENGTH:" + Encryptor.EncodeDecrypt(userData.SessionToken));
+                    
+                    fileListLenght=Convert.ToInt32(PacketRecipient.GetJsonData(stream, client.SendBufferSize));
+
+                }
+
+            }
+
+            
+
             using (var client = TcpHelper.GetClient())
             {
                 using (var stream = client.GetStream())
@@ -32,10 +51,10 @@ namespace Client
                     PacketSender.SendJsonString(stream,
                         "GET:FILES:LIST:" + Encryptor.EncodeDecrypt(userData.SessionToken));
 
-                    data = PacketRecipient.GetJsonData(stream, client.SendBufferSize);
+                    data = PacketRecipient.GetJsonData(stream, client.SendBufferSize, fileListLenght);
                 }
             }
-
+            
             serverFiles = JsonWorker<List<FileM>>.JsonToObj(data);
 
             if (serverFiles.Count == 0)

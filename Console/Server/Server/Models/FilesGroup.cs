@@ -7,5 +7,7 @@ namespace Server.Models
         public int GroupId;
 
         public List<FileM> files;
+
+        public string JsonList;
     }
 }

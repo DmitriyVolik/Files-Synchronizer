@@ -109,6 +109,7 @@ namespace Server
                             else
                             {
                                 candidate.files = temp;
+                                candidate.JsonList=JsonWorker<List<FileM>>.ObjToJson(temp);
                             }
 
                         }
@@ -119,6 +120,7 @@ namespace Server
                         
                         
                     }
+                    
                     Thread.Sleep(3000);
                 }
                 
@@ -160,7 +162,6 @@ namespace Server
                     allDone.Reset();  
   
                     // Start an asynchronous socket to listen for connections.  
-                    Console.WriteLine("Waiting for a connection...");  
                     listener.BeginAccept(
                         new AsyncCallback(AcceptCallback),  
                         listener );  
@@ -181,7 +182,6 @@ namespace Server
 
         public static void AcceptCallback(IAsyncResult ar)
         {
-            Console.WriteLine("Accept");
             // Signal the main thread to continue.  
             allDone.Set();  
   
@@ -229,25 +229,63 @@ namespace Server
                 try
                 {
                     content = state.sb.ToString();
-                    if (content.Contains("GET:FILES:LIST:"))
-                    {
 
-                        string token = content.Replace("GET:FILES:LIST:", "");
+                    /*if (content.Contains("GET:FILES:LIST:LENGTH:"))
+                    {
+                        string token = content.Replace("GET:FILES:LIST:LENGTH:", "");
 
                         Group group = DbHelper.GetGroupBySession(token);
 
                         if (group!= null)
                         {
-                            var filesGroup = FilesGroups.FirstOrDefault(x => x.GroupId == group.Id).files;
+                            var filesGroup = FilesGroups.FirstOrDefault(x => x.GroupId == group.Id);
+
+                            if ( filesGroup!=null)
+                            {
+                                
+                            }
+                            
+                        }
+                    }*/
+                    if (content.Contains("GET:FILES:LIST:"))
+                    {
+                        Console.WriteLine("ADwad");
+
+                        var temp = content.Split(":");
+
+
+                        string token = temp.Last();
+                        /*string token = content.Replace("GET:FILES:LIST:", "");*/
+                        
+                        
+
+                        Group group = DbHelper.GetGroupBySession(token);
+
+                        if (group!= null)
+                        {
+
+                            
+                            var filesGroup = FilesGroups.FirstOrDefault(x => x.GroupId == group.Id);
 
                             if (filesGroup!=null)
                             {
-                                Send(handler, JsonWorker<List<FileM>>.ObjToJson(filesGroup));
+                                string req = content.Replace(token, "");
+                                if (req=="GET:FILES:LIST:LENGTH:")
+                                {
+                                    Send(handler, filesGroup.JsonList.Length.ToString());
+                                }
+                                else if (req=="GET:FILES:LIST:")
+                                {
+                                    Send(handler,filesGroup.JsonList);
+                                }
+                                
+                                
                             }
                             
                         }
                         
                     } 
+                    
                     else if (content.Contains("GET:FILE:"))
                     {
                         string temp = content.Replace("GET:FILE:", "");
