@@ -7,18 +7,20 @@
         mc:Ignorable="d"
         Title="Админ-панель" Height="450" Width="800"
         MinHeight="450"
+        MaxWidth="800"
         MinWidth="800"
         WindowStartupLocation="CenterScreen"
+        ResizeMode="CanMinimize"
 >
     <Window.Resources>
         <CollectionViewSource x:Key="AllGroups" Source="{Binding Groups}" />
     </Window.Resources>
     
-    <Grid >
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="7*"></RowDefinition>
-            <RowDefinition Height="93*"></RowDefinition>
-            
+            <RowDefinition Height="35"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="40" ></RowDefinition>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="25*"></ColumnDefinition>
@@ -28,7 +30,10 @@
             <ColumnDefinition Width="13*"></ColumnDefinition>
 
         </Grid.ColumnDefinitions>
-        <Label FontSize="15" FontFamily="Arial" Content="Пользователи" VerticalAlignment="Bottom" HorizontalAlignment="Left"></Label>
+        
+        <Label Grid.Column="0" Grid.Row="0" FontSize="15" FontFamily="Arial" Content="Пользователи" VerticalAlignment="Bottom" HorizontalAlignment="Left"></Label>
+        <Label Grid.Row="0" Grid.Column="3" FontSize="15" FontFamily="Arial" Content="Группы" VerticalAlignment="Bottom" HorizontalAlignment="Left"></Label>
+        
         
         <StackPanel Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="8 0 0 0">
             <DataGrid Grid.Column="0" MaxWidth="200" SelectedItem="{Binding SelectedUser}" Grid.Row="1" VerticalAlignment="Top" MinColumnWidth="50" HorizontalAlignment="Left" FontSize="15" FontFamily="Arial" ItemsSource="{Binding Users}" CanUserAddRows="False" AutoGenerateColumns="False">
@@ -39,25 +44,11 @@
             </DataGrid>
             <StackPanel Orientation="Vertical" Margin="20 0 0 0"> 
                 <TextBox Padding="3" Text="{Binding SearchFilter}" MaxLength="20" Width="150" FontSize="15" FontFamily="Arial" Margin="0 0 0 0"></TextBox>
-                <Button Content="Поиск" Width="80" Command="{Binding SearchBtn}" Padding="5" FontSize="15" FontFamily="Arial" Margin="0 2 70 0"></Button>
+                <Button Foreground="#0071FF" Content="Поиск" Width="80" Command="{Binding SearchBtn}" Padding="5" FontSize="15" FontFamily="Arial" Margin="0 2 70 0"></Button>
             </StackPanel>
         </StackPanel>
         
-        
-        
-        
-        
-
-
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Grid.Column="0" Grid.Row="1" ZIndex="2" Grid.ColumnSpan="5" Margin="0 270 0 0">
-            <Button Content="Загрузить из БД" Command="{Binding ResetBtn}" Margin="0  0 0 25"  FontSize="15" FontFamily="Arial" Padding="5"></Button>
-            <Button Content="Сохранить изменения" Command="{Binding SaveBtn}" Margin="0 0 0 25"  FontSize="15" FontFamily="Arial" Padding="5"></Button>
-        </StackPanel>
-        
-        <Line Grid.Row="0" Grid.RowSpan="2" HorizontalAlignment="Center" Grid.Column="2" Stroke="Black" StrokeThickness="4" X1="0" Y1="1200" X2="0" Y2="0"></Line>
-        <Label Grid.Row="0" Grid.Column="3" FontSize="15" FontFamily="Arial" Content="Группы" VerticalAlignment="Bottom" HorizontalAlignment="Left"></Label>
-        
-        
+        <Line Grid.Row="0" Grid.RowSpan="2" HorizontalAlignment="Center" Grid.Column="2" Stroke="Black" StrokeThickness="2" X1="0" Y1="1200" X2="0" Y2="0"></Line>
         
         <StackPanel VerticalAlignment="Top" Grid.Column="3" Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal">
             <DataGrid SelectedItem="{Binding SelectedGroup}" MaxWidth="250" Grid.Column="3" Grid.Row="1" FontSize="15" FontFamily="Arial" AutoGenerateColumns="False" VerticalAlignment="Top" HorizontalAlignment="Left" ItemsSource="{Binding  Source={StaticResource AllGroups}}" CanUserAddRows="False" >
@@ -67,15 +58,21 @@
                 </DataGrid.Columns>
             </DataGrid>
             <StackPanel Margin="20 0 0 0">
-                <Button  HorizontalAlignment="Left"  Padding="5" Command="{Binding AddGroupBtn}" Width="80" Height="30" FontSize="15" Margin="0 0 0 2" FontFamily="Arial">
+                <Button Foreground="#2BA04B" HorizontalAlignment="Left"  Padding="5" Command="{Binding AddGroupBtn}" Width="80" Height="30" FontSize="15" Margin="0 0 0 2" FontFamily="Arial">
                     <TextBlock TextAlignment="Center">Создать</TextBlock>
                 </Button>
-                <Button Command="{Binding EditBtn}" HorizontalAlignment="Left" Padding="5" Width="80" Height="30" FontSize="15" Margin="0 0 0 0" FontFamily="Arial">
+                <Button Foreground="#0071FF" Command="{Binding EditBtn}" HorizontalAlignment="Left" Padding="5" Width="80" Height="30" FontSize="15" Margin="0 0 0 0" FontFamily="Arial">
                     <TextBlock TextAlignment="Center">Изменить</TextBlock>
                 </Button>
             </StackPanel>
             
         </StackPanel>
         
+        <Canvas Background="LightGray" Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="5">
+            <StackPanel  Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left"  Margin="0 5 0 0">
+                <Button Foreground="#0071FF" Content="Загрузить из БД" Command="{Binding ResetBtn}" Margin="5 0 15 0"  FontSize="15" FontFamily="Arial" Padding="5"></Button>
+                <Button Foreground="#2BA04B" Content="Сохранить изменения" Command="{Binding SaveBtn}" Margin="0 0 0 0"  FontSize="15" FontFamily="Arial" Padding="5"></Button>
+            </StackPanel>
+        </Canvas>
     </Grid>
 </Window>
