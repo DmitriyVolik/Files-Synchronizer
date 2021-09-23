@@ -57,6 +57,11 @@ namespace Server.Helpers
                     }
                     else
                     {
+                        /*if (candidate.Group!=null)
+                        {
+                            MessageBox.Show(candidate.Group.Name);
+                        }*/
+                        
                         user.Group = candidate.Group;
                         db.ChangeTracker.DetectChanges();
                     }
@@ -65,7 +70,7 @@ namespace Server.Helpers
             }
         }
         
-        public static void SaveGroupsDeleted(ObservableCollection<Group> groups)
+        public static void SaveGroupsDeleted(ObservableCollection<Group>groups , ObservableCollection<User>users)
         {
             using (Context db = new Context())
             {
@@ -82,6 +87,7 @@ namespace Server.Helpers
                             foreach (var item in tempUsers)
                             {
                                 item.Group = null;
+                                users.FirstOrDefault(x => x.Id == item.Id).Group=null;
                             }
                                         
                             db2.SaveChanges();

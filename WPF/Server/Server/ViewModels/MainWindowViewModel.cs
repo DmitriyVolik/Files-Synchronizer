@@ -52,9 +52,25 @@ namespace Server.ViewModels
                 return new RelayCommand(
                     obj =>
                     {
-                        DBHelper.SaveUsers(Users);
-                        DBHelper.SaveGroupsDeleted(Groups);
                         
+                        /*foreach (var item in Groups)
+                        {
+                            MessageBox.Show(item.Name);
+                        }*/
+                        DBHelper.SaveGroupsDeleted(Groups, Users);
+                        
+                        
+                        /*foreach (var item in Users)
+                        {
+                            if (item.Group!=null)
+                            {
+                                MessageBox.Show(item.Group.Name);
+                            }
+                            
+                        }*/
+                        
+                        DBHelper.SaveUsers(Users);
+
                         OldUsers.Clear();
 
                         foreach (var user in Users)
@@ -84,8 +100,9 @@ namespace Server.ViewModels
                                 "Предупреждение", MessageBoxButton.YesNo);
                             if (result==MessageBoxResult.Yes)
                             {
+                                DBHelper.SaveGroupsDeleted(Groups, Users);
                                 DBHelper.SaveUsers(Users);
-                                DBHelper.SaveGroupsDeleted(Groups);
+                                
                             }
                         }
                         SearchFilter = "";
@@ -153,8 +170,9 @@ namespace Server.ViewModels
                                 "Предупреждение", MessageBoxButton.YesNo);
                             if (result==MessageBoxResult.Yes)
                             {
+                                DBHelper.SaveGroupsDeleted(Groups, Users);
                                 DBHelper.SaveUsers(Users);
-                                DBHelper.SaveGroupsDeleted(Groups);
+                                
                             }
                         }
                         
@@ -174,8 +192,8 @@ namespace Server.ViewModels
                     "Предупреждение", MessageBoxButton.YesNo);
                 if (result==MessageBoxResult.Yes)
                 {
+                    DBHelper.SaveGroupsDeleted(Groups, Users);
                     DBHelper.SaveUsers(Users);
-                    DBHelper.SaveGroupsDeleted(Groups);
                 }
             }
 
