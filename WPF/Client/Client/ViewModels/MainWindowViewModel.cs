@@ -25,7 +25,7 @@ namespace Client.ViewModels
             _window = window;
             UserData = userData;
             TimeDelay = 1;
-            if (UserData.FolderPath == null) UserData.FolderPath = "Не выбрана";
+            if (UserData.FolderPath == null) UserData.FolderPath = "Не выбрана ";
         }
 
         public string FolderPath
@@ -87,6 +87,11 @@ namespace Client.ViewModels
             {
                 return new RelayCommand(obj =>
                 {
+                    if (FolderPath=="Не выбрана")
+                    {
+                        MessageBox.Show("Не выбрана папка!", "Ошибка");
+                        return;
+                    }
                     try
                     {
                         var currentDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -109,9 +114,11 @@ namespace Client.ViewModels
             {
                 return new RelayCommand(obj =>
                 {
-                    if (TimeDelay < 1 || TimeDelay > 24)
-                        MessageBox.Show("Задержка не может быть менее чем 1 и более чем 24 часа!", "Ошибка");
-
+                    if (FolderPath=="Не выбрана")
+                    {
+                        MessageBox.Show("Не выбрана папка!", "Ошибка");
+                        return;
+                    }
                     using (TaskService ts = new())
                     {
                         TaskDefinition td = ts.NewTask();

@@ -229,28 +229,9 @@ namespace Server
                 try
                 {
                     content = state.sb.ToString();
-
-                    /*if (content.Contains("GET:FILES:LIST:LENGTH:"))
-                    {
-                        string token = content.Replace("GET:FILES:LIST:LENGTH:", "");
-
-                        Group group = DbHelper.GetGroupBySession(token);
-
-                        if (group!= null)
-                        {
-                            var filesGroup = FilesGroups.FirstOrDefault(x => x.GroupId == group.Id);
-
-                            if ( filesGroup!=null)
-                            {
-                                
-                            }
-                            
-                        }
-                    }*/
+                    
                     if (content.Contains("GET:FILES:LIST:"))
                     {
-                        Console.WriteLine("ADwad");
-
                         var temp = content.Split(":");
 
 
@@ -536,9 +517,6 @@ namespace Server
             
                 if (total > 0)
                 {
-                    // !!! Заменить BeginSendFile на BeginSend, чтобы можно было передавать байты
-                    // файла по частям
-                    // handler.BeginSendFile(MainDirectory+path,new AsyncCallback(SendFileCallback), handler);
                     handler.BeginSend(fileByteArray, (int)total, fileByteArray.Length - (int)total,
                         SocketFlags.None, new AsyncCallback(SendFileCallback), handler);
                     return;
@@ -560,9 +538,8 @@ namespace Server
         
         public static void Main(String[] args)
         {
-            
-            Console.WriteLine(System.Security.Principal.WindowsIdentity.GetCurrent().Name);
-            
+
+            Console.WriteLine("Start");
             StartListening();
 
         }
